@@ -1,3 +1,3 @@
-# Statistic
+# Statystyka
 
-raporty, zadania, kody źródłowe
+raporty, zadania, kody źródłowe w R
