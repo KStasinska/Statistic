@@ -1,0 +1,512 @@
+---
+title: "Sprawozdanie 1"
+author: "Katarzyna Stasińska"
+date: "2023-10"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r,echo=FALSE}
+n=10000
+set.seed(1)
+
+oblicz_estymatory=function(X,n){
+    a=mean(X)
+    b=median(X)
+    vector=dnorm(qnorm((1:n-1)/(n-1)))
+    weights=vector/sum(vector)
+    c=weighted.mean(X,weights)
+    weights2=dnorm(qnorm((1:n-1)/n))-dnorm(qnorm(1:n/n))
+    d=sum(sort(X)*weights2)
+  return(c(a,b,c,d))
+}
+
+oblicz_statystyki=function(df,theta){
+  MSE <- colSums(apply(df[, 1:4], 2, function(x) (x-theta)^2))*1/n
+  var <- colSums(apply(df[, 1:4], 2, function(x) (x-mean(x))^2))*1/n
+  bias <- colMeans(df)-theta
+  return(list(MSE,var,bias))
+}
+
+wykresy=function(df){
+  l=layout(matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2, byrow = TRUE)) 
+  hist(df$theta1)
+  hist(df$theta2)
+  hist(df$theta3)
+  hist(df$theta4)
+  return(df)
+}
+
+```
+
+# Zadanie 1
+W przypadku $\hat\theta_{3}$ postanowiłam, że wektorem z wagami, będzie znormalizowany wektor wygenerowany przez $\varphi(\Phi^{-1}(\frac{i-1}{n-1}))$, gdzie oznaczenia są takie same jak w podpunkcie (iv).
+
+a) Rozważmy 50 obserwacji z rozkładu N(1,1), wyliczmy na nich wartości $\hat\theta_{1}$,  $\hat\theta_{2}$, $\hat\theta_{3}$ i $\hat\theta_{4}$. Na wykresach możemy zauważyć efekt powtórzenia tej procedury 10 000 razy. Zwróćmy uwagę, że ich wartości są rzeczywiście bliskie $\theta=1$. 
+
+```{r,echo=FALSE}
+df <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("theta1", "theta2", "theta3","theta4")
+colnames(df) <- x
+
+for (i in 1:n){
+  X=rnorm(50,1,1)
+  vec=oblicz_estymatory(X,50)
+  df[nrow(df)+1,] <- vec
+}
+
+df=wykresy(df)
+
+y=oblicz_statystyki(df,1)
+```
+Poniżej prezentuję szacowany błąd średniokwadratowy, wariancję i obciążenie każdego z estymatorów. Wyniki są podobne w przypadku każdego z estymatorów. Obciążenia są bliskie $0$.
+```{r,echo=FALSE}
+y
+```
+b) Analogicznie rozważmy 50 obserwacji z rozkładu N(4,1), wyliczmy na nich wartości $\hat\theta_{1}$,  $\hat\theta_{2}$, $\hat\theta_{3}$ i $\hat\theta_{4}$. Na wykresach możemy zauważyć efekt powtórzenia tej procedury 10 000 razy. Zwróćmy uwagę, że i w tym przypadku wartości są rzeczywiście bliskie $\theta=4$, poza $\hat\theta_{4}$, której średnia jest bliska $1$
+
+```{r,echo=FALSE}
+df <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("theta1", "theta2", "theta3","theta4")
+colnames(df) <- x
+
+for (i in 1:n){
+  X=rnorm(50,4,1)
+  vec=oblicz_estymatory(X,50)
+  df[nrow(df)+1,] <- vec
+}
+
+df=wykresy(df)
+
+y=oblicz_statystyki(df,4)
+```
+Poniżej prezentuję szacowany błąd średniokwadratowy, wariancję i obciążenie każdego z estymatorów. W tym przypadku wyniki się już różnią, $\hat\theta_{4}$ odstaje od reszty i najsłabiej minimalizuje statystyki.
+```{r,echo=FALSE}
+y
+```
+c) Na koniec rozważmy 50 obserwacji z rozkładu N(1,2), wyliczmy na nich wartości $\hat\theta_{1}$,  $\hat\theta_{2}$, $\hat\theta_{3}$ i $\hat\theta_{4}$. Na wykresach możemy zauważyć efekt powtórzenia tej procedury 10 000 razy. Zwróćmy uwagę, że i w tym przypadku wartości są rzeczywiście bliskie $\theta=1$, poza $\hat\theta_{4}$, której średnia jest bliska $2$.
+
+```{r,echo=FALSE}
+df <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("theta1", "theta2", "theta3","theta4")
+colnames(df) <- x
+
+for (i in 1:n){
+  X=rnorm(50,1,2)
+  vec=oblicz_estymatory(X,50)
+  df[nrow(df)+1,] <- vec
+}
+
+df=wykresy(df)
+
+y=oblicz_statystyki(df,1)
+```
+Poniżej prezentuję szacowany błąd średniokwadratowy, wariancję i obciążenie każdego z estymatorów. W tym przypadku  $\hat\theta_{4}$ znów odstaje od reszty i najsłabiej minimalizuje statystyki.
+```{r,echo=FALSE}
+y
+```
+Na podstawie powyższych informacji można stwierdzić, że $\hat\theta_{4}$ jest słabym estymatorem.
+
+# Zadanie 2
+Funkcja `set.seed(1)` inicjuje generator liczb pseudolosowych z ziarnem podanym w argumencie. W praktyce używa się jej, by przy każdym uruchomieniu skryptu otrzymywać takie same wyniki. Dzięki niej próbując konkretnie omówić daną próbkę(tj. wskazując konkretne rekordy) wylosowanych danych, mamy pewność, że przy kolejnym odpaleniu skryptu nasze wnioski wciąż będą w pełni prawdziwe. Możemy też pobrać nasze wylosowane dane i za każdym razem ich nie inicjować (duża oszczędność czasu w przypadku większej ilości danych).
+
+# Zadanie 3
+Potencjalne estymatory największej wiarogodności, to miejsca zerowe pochodnej funkcji logwiarogodności, dla rozkładu logistycznego wyraża się ona wzorem:
+$l'(\theta)=\frac{1}{\sigma}(n-2\Sigma\frac{e^{\frac{-(x_{i}-\theta)}{\sigma}}}{1+e^{\frac{-(x_{i}-\theta)}{\sigma}}})$. Nie jest to łatwe dla tak skomplikowanego wyrażenia. Pokażmy, że nie są to tylko potencjalne, a rzeczywiste estymatory i istnieje tak naprawdę jeden. Zwróćmy uwagę, że druga pochodna funkcji logwiarogodności dana wzorem: $l''(\theta)=\frac{-1}{\sigma^{2}}(2\Sigma\frac{e^{\frac{-(x_{i}-\theta)}{\sigma}}}{(1+e^{\frac{-(x_{i}-\theta)}{\sigma}})^{2}}$ jest stale mniejsza od zera. Jest tak, ponieważ mianownik i licznik ułamka są dodatnie, przez co wszystkie czynniki iloczynu są dodatnie, poza pierwszym. Oznacza to, że $l'(\theta)$ maleje, a że jest to funkcja określona na całym $\mathbb{R}$, to posiada dokładnie jedno miejsce zerowe, które maksymalizuje wartość funkcji $l(\theta)$. Zatem jest estymatorem największej wiarogodności. Pozostaje wyliczyć to miejsce zerowe i pomogą w tym metody numeryczne.
+
+# Zadanie 4
+Rozważmy metodę Newtona (zwaną również metodą stycznych), jako narzędzie pozwalające wyliczyć miejsce zerowe funkcji $l'(\theta)$. Polega ona na tym, że zaczynamy od pewnej wartości $\theta_{0}$ (ważne, aby mieściła się w przedziale, w którym chcemy poszukiwać miejsca zerowego, w naszym przypadku jednak nie ma to znaczenia, bo miejsce zerowe jest tylko jedno). Jest to metoda iteracyjna, a kolejne iteracje wyglądają następująco: wyznaczamy punkt przecięcia OX i stycznej do funkcji $l'(\theta)$ w punkcie
+$l'(\theta_{i})$, jest on równy $\theta_{i+1}$. Możemy to zapisać wzorem $\theta_{i+1}=\theta_{i}-\frac{l'(\theta+{i})}{l''(\theta+{i})}$. Iteracje kończymy na przykład, gdy $|l'(\theta_{i})|<\epsilon$ albo $|\theta_{i+1}-\theta_{i}|<\epsilon$, albo gdy liczba iteracji jest wystarczająca duża. Szukane miejsce zerowe jest bliskie $\theta_{k}$, gdzie $k$ to ostatnia iteracja.
+
+# Zadanie 5
+
+Szukane miejsca zerowe są w pobliżu podanej $\theta$, dlatego właśnie ten punkt jest punktem początkowym w metodzie Newtona. Liczbę kroków ograniczam przez 5000, raczej nigdy tyle nie następuje, bo przy ustalonym jak powyżej punkcie startowym, dość szybko są znajdowane punkty, dla których funkcja $l'$ przyjmuje wartości bliskie zeru. Poniżej przedstawiam histogramy z wyliczonymi estymatorami $\theta$ oraz szacowany błąd średniokwadratowy, wariancję i obciążenie dla każdego z podpunktów. W każdym przypadku wyniki są bliskie zeru (w podpunkcie $c)$ MSE i var przekraczają 2, ale powinny być 4 razy większe niż w $a)$ i $b)$, co się zgadza.
+
+```{r,echo=FALSE}
+set.seed(1)
+lprim=function(X,theta,sigma){
+  n=length(X)
+  return((1/sigma)*(n-2*sum(exp(-(X-theta)/sigma)/(1+exp(-(X-theta)/sigma)))))
+}
+lbis=function(X,theta,sigma){
+  return(-2/sigma^2*sum(exp(-(X-theta)/sigma)/(1+exp(-(X-theta)/sigma))^2))
+}
+
+Newton=function(start,koniec,X,sigma){
+  i=0
+  theta=start
+  while (abs(lprim(X,theta,sigma))>0.0000001 & i<5000){
+    a=lprim(X,theta,sigma)
+    b=lbis(X,theta,sigma)
+    theta=theta-a/b
+    i=i+1
+  }
+  x=abs(lprim(X,theta,sigma))
+  kroki<<-append(kroki,i)
+  return (theta)
+}
+
+df2 <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("theta1", "theta2", "theta3")
+colnames(df2) <- x
+
+R=10000
+kroki=c()
+for (i in 1:R){
+  X1=rlogis(50,1,1)
+  X2=rlogis(50,4,1)
+  X3=rlogis(50,1,2)
+  vec=c(Newton(1,5000,X1,1),Newton(4,5000,X2,1),Newton(1,5000,X3,2))
+  df2[nrow(df2)+1,] <- vec
+}
+
+l=layout(matrix(c(1, 2, 3), nrow = 1, ncol = 3, byrow = TRUE))
+hist(df2$theta1)
+hist(df2$theta2)
+hist(df2$theta3)
+
+oblicz_statystyki2=function(X,theta){
+  MSE <- sum(((X-theta)^2)*0.001)
+  var <- sum(((X-mean(X))^2)*0.001)
+  bias <- mean(X)-theta
+  return(list(MSE,var,bias))
+}
+df3 <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df3) <- x
+
+df3[nrow(df3)+1,] <- oblicz_statystyki2(df2$theta1,1)
+df3[nrow(df3)+1,] <- oblicz_statystyki2(df2$theta2,4)
+df3[nrow(df3)+1,] <- oblicz_statystyki2(df2$theta3,1)
+df3
+```
+Można lepiej przyjrzeć się liczbie kroków potrzebnych do zakończenia metody Newtona na histogramie poniżej.
+
+```{r,echo=FALSE}
+hist(kroki)
+```
+
+# zadanie 6
+Jak w zadaniu wyżej, podaną $\theta$ uznaję za punkt początkowy w metodzie Newtona. Liczbę kroków ograniczam przez 5000, raczej nigdy tyle nie następuje, bo przy ustalonym w ten sposób punkcie startowym, dość szybko są znajdowane punkty, dla których funkcja $l'$ przyjmuje wartości bliskie zeru. Poniżej przedstawiam histogramy z wyliczonymi estymatorami $\theta$ oraz szacowany błąd średniokwadratowy, wariancję i obciążenie dla każdego z podpunktów. W każdym przypadku wyniki są bliskie zeru, znowu trzecia wartość MSE i var jest 4 razy większa niż poprzednie dwie, co zgadza się, bo mamy $\sigma=2$.
+
+```{r,echo=FALSE}
+lprim=function(X,theta,sigma){
+  return ((2/sigma)*sum(((X-theta)/sigma)/(1+((X-theta)/sigma)^2)))
+}
+lbis=function(X,theta,sigma){
+  return((-2/sigma^2)*sum(1-((X-theta)/sigma)^2/(1+((X-theta)/sigma)^2)^2))
+}
+df4 <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("theta1", "theta2", "theta3")
+colnames(df4) <- x
+
+kroki=c()
+R=10000
+for (i in 1:R){
+  X1=rcauchy(50,1,1)
+  X2=rcauchy(50,4,1)
+  X3=rcauchy(50,1,2)
+  vec=c(Newton(1,5000,X1,1),Newton(4,5000,X2,1),Newton(1,5000,X3,2))
+  df4[nrow(df4)+1,] <- vec
+}
+
+l=layout(matrix(c(1, 2, 3), nrow = 1, ncol = 3, byrow = TRUE))
+hist(df4$theta1)
+hist(df4$theta2)
+hist(df4$theta3)
+
+df5 <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df5) <- x
+
+df5[nrow(df5)+1,] <- oblicz_statystyki2(df4$theta1,1)
+df5[nrow(df5)+1,] <- oblicz_statystyki2(df4$theta2,4)
+df5[nrow(df5)+1,] <- oblicz_statystyki2(df4$theta3,1)
+df5
+```
+
+Analogicznie jak w zadaniu 5, poniżej przedstawiam histogram liczby kroków potrzebnych do zakończenia funkcji Newton.
+
+```{r,echo=FALSE}
+hist(kroki)
+```
+
+# zadanie 7
+## zadanie 1a) n=20 
+
+```{r,echo=FALSE}
+df <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("theta1", "theta2", "theta3","theta4")
+colnames(df) <- x
+
+for (i in 1:n){
+  X=rnorm(20,1,1)
+  vec=oblicz_estymatory(X,20)
+  df[nrow(df)+1,] <- vec
+}
+
+df=wykresy(df)
+
+y=oblicz_statystyki(df,1)
+y
+```
+
+## zadanie 1a) n=100
+
+```{r,echo=FALSE}
+df <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("theta1", "theta2", "theta3","theta4")
+colnames(df) <- x
+
+for (i in 1:n){
+  X=rnorm(100,1,1)
+  vec=oblicz_estymatory(X,100)
+  df[nrow(df)+1,] <- vec
+}
+
+df=wykresy(df)
+
+y=oblicz_statystyki(df,1)
+y
+```
+
+Wnioski: MSE i var są najbliższe zeru dla $n=100$, potem dla $n=50$, a na końcu $n=20$. Przy biasie nie widać aż takich różnic.
+
+## zadanie 1b) n=20 
+
+```{r,echo=FALSE}
+df <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("theta1", "theta2", "theta3","theta4")
+colnames(df) <- x
+
+for (i in 1:n){
+  X=rnorm(20,4,1)
+  vec=oblicz_estymatory(X,20)
+  df[nrow(df)+1,] <- vec
+}
+
+df=wykresy(df)
+
+y=oblicz_statystyki(df,4)
+y
+```
+
+## zadanie 1b) n=100
+
+```{r,echo=FALSE}
+df <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("theta1", "theta2", "theta3","theta4")
+colnames(df) <- x
+
+for (i in 1:n){
+  X=rnorm(100,4,1)
+  vec=oblicz_estymatory(X,100)
+  df[nrow(df)+1,] <- vec
+}
+
+df=wykresy(df)
+
+y=oblicz_statystyki(df,4)
+y
+```
+
+Wnioski: Tak samo jak wyżej, to znaczy MSE i var są najbliższe zeru dla $n=100$, potem dla $n=50$, a na końcu $n=20$. Przy biasie nie widać aż takich różnic.
+
+## zadanie 1c) n=20 
+
+```{r,echo=FALSE}
+df <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("theta1", "theta2", "theta3","theta4")
+colnames(df) <- x
+
+for (i in 1:n){
+  X=rnorm(20,1,2)
+  vec=oblicz_estymatory(X,20)
+  df[nrow(df)+1,] <- vec
+}
+
+df=wykresy(df)
+
+y=oblicz_statystyki(df,1)
+y
+```
+
+## zadanie 1c) n=100
+
+```{r,echo=FALSE}
+df <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("theta1", "theta2", "theta3","theta4")
+colnames(df) <- x
+
+for (i in 1:n){
+  X=rnorm(100,1,2)
+  vec=oblicz_estymatory(X,100)
+  df[nrow(df)+1,] <- vec
+}
+
+df=wykresy(df)
+
+y=oblicz_statystyki(df,1)
+y
+```
+
+Wnioski zebrane: Im większy rozmiar próbki, tym dane bardziej zachowują się w sposób, w jaki przewidujemy korzystając z teorii, minimalizowane jest MSE, var oraz bias.
+
+## zadanie 5 n=20
+
+```{r,echo=FALSE}
+df20 <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("theta1", "theta2", "theta3")
+colnames(df20) <- x
+
+R=10000
+for (i in 1:R){
+  X1=rlogis(20,1,1)
+  X2=rlogis(20,4,1)
+  X3=rlogis(20,1,2)
+  vec=c(Newton(1,5000,X1,1),Newton(4,5000,X2,1),Newton(1,5000,X3,2))
+  df20[nrow(df20)+1,] <- vec
+}
+
+l=layout(matrix(c(1, 2, 3), nrow = 1, ncol = 3, byrow = TRUE))
+hist(df20$theta1)
+hist(df20$theta2)
+hist(df20$theta3)
+
+df20i <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df20i) <- x
+
+df20i[nrow(df20i)+1,] <- oblicz_statystyki2(df20$theta1,1)
+df20i[nrow(df20i)+1,] <- oblicz_statystyki2(df20$theta2,4)
+df20i[nrow(df20i)+1,] <- oblicz_statystyki2(df20$theta3,1)
+df20i
+```
+
+## zadanie 5 n=100
+
+```{r,echo=FALSE}
+df100 <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("theta1", "theta2", "theta3")
+colnames(df100) <- x
+
+R=10000
+for (i in 1:R){
+  X1=rlogis(100,1,1)
+  X2=rlogis(100,4,1)
+  X3=rlogis(100,1,2)
+  vec=c(Newton(1,5000,X1,1),Newton(4,5000,X2,1),Newton(1,5000,X3,2))
+  df100[nrow(df100)+1,] <- vec
+}
+
+l=layout(matrix(c(1, 2, 3), nrow = 1, ncol = 3, byrow = TRUE))
+hist(df100$theta1)
+hist(df100$theta2)
+hist(df100$theta3)
+
+df100i <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df100i) <- x
+
+df100i[nrow(df100i)+1,] <- oblicz_statystyki2(df100$theta1,1)
+df100i[nrow(df100i)+1,] <- oblicz_statystyki2(df100$theta2,4)
+df100i[nrow(df100i)+1,] <- oblicz_statystyki2(df100$theta3,1)
+df100i
+```
+
+Wnioski: jak w zadaniu 1, im większe n, tym MSE, var i bias są bliższe 0.
+
+## zadanie 6 n=20
+
+```{r,echo=FALSE}
+df60 <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("theta1", "theta2", "theta3")
+colnames(df60) <- x
+
+R=10000
+for (i in 1:R){
+  X1=rcauchy(20,1,1)
+  X2=rcauchy(20,4,1)
+  X3=rcauchy(20,1,2)
+  vec=c(Newton(1,5000,X1,1),Newton(4,5000,X2,1),Newton(1,5000,X3,2))
+  df60[nrow(df60)+1,] <- vec
+}
+
+l=layout(matrix(c(1, 2, 3), nrow = 1, ncol = 3, byrow = TRUE))
+hist(df60$theta1)
+hist(df60$theta2)
+hist(df60$theta3)
+
+df61 <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df61) <- x
+
+df61[nrow(df61)+1,] <- oblicz_statystyki2(df60$theta1,1)
+df61[nrow(df61)+1,] <- oblicz_statystyki2(df60$theta2,4)
+df61[nrow(df61)+1,] <- oblicz_statystyki2(df60$theta3,1)
+df61
+```
+
+## zadanie 6 n=100
+
+```{r,echo=FALSE}
+df600 <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("theta1", "theta2", "theta3")
+colnames(df600) <- x
+
+R=10000
+for (i in 1:R){
+  X1=rcauchy(100,1,1)
+  X2=rcauchy(100,4,1)
+  X3=rcauchy(100,1,2)
+  vec=c(Newton(1,5000,X1,1),Newton(4,5000,X2,1),Newton(1,5000,X3,2))
+  df600[nrow(df600)+1,] <- vec
+}
+
+l=layout(matrix(c(1, 2, 3), nrow = 1, ncol = 3, byrow = TRUE))
+hist(df600$theta1)
+hist(df600$theta2)
+hist(df600$theta3)
+
+df610 <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df610) <- x
+
+df610[nrow(df610)+1,] <- oblicz_statystyki2(df600$theta1,1)
+df610[nrow(df610)+1,] <- oblicz_statystyki2(df600$theta2,4)
+df610[nrow(df610)+1,] <- oblicz_statystyki2(df600$theta3,1)
+df610
+```
+Wnioski: Również i w tym przypadku większa próbka skutkowała mniejszymi wartościami MLE i var. Przy biasie nie widać specjalnej różnicy. 
+
+Większa próbka sprawia, że mniejsza jej część to dane mocno zaburzone.
+
+## Rachunki
+Rozkład logistyczny: 
+$$f(x)=\frac{e^{-(x-\theta)/\sigma}}{\sigma(1+e^{-(x-\theta)/\sigma})^2}$$
+\begin{align}
+l(\theta)&=\sum_{i=1}^{n} log f(x_i,\theta)=\sum_{i=1}^{n} \frac{-(x_i-\theta)}{\sigma}-(log\sigma+2log(1+e^{-(x-\theta)/\sigma})\\
+&=\frac{-n(\bar{x}-\theta)}{\sigma}-nlog\sigma-2\sum_{i=1}^{n}log(1+e^{-(x-\theta)/\sigma})
+\end{align}
+\begin{align}
+l'(\theta)&=\frac{n}{\sigma}-\frac{2}{\sigma}\sum_{i=1}^{n}\frac{e^{-(x-\theta)/\sigma}}{1+e^{-(x-\theta)/\sigma}}
+\end{align}
+\begin{align}
+l''(\theta)&=\frac{-2}{\sigma}\sum_{i=1}^{n}\frac{\frac{-1}{\sigma}e^{-(x-\theta)/\sigma}(e^{-(x-\theta)/\sigma}+1)-(\frac{-1}{\sigma}e^{-(x-\theta)/\sigma}e^{-(x-\theta)/\sigma})}{(\frac{-1}{\sigma}+1)^2}\\
+&=\frac{-2}{\sigma}\sum_{i=1}^{n}\frac{e^{-(x-\theta)/\sigma}}{(e^{-(x-\theta)/\sigma}+1)^2}
+\end{align}
+
+Rozkład Cauchy'ego:
+$$f(x)=\frac{1}{\pi\sigma(1+\frac{x-\theta}{\sigma})^2}$$
+\begin{align}
+l(\theta)&=\sum_{i=1}^{n} log f(x_i,\theta)=\sum_{i=1}^{n}log\frac{1}{\pi\sigma(1+\frac{x_i-\theta}{\sigma})^2}=-\sum_{i=1}^{n}log(\pi\sigma(1+\frac{x_i-\theta}{\sigma})^2)\\
+&=-\sum_{i=1}^{n}log(\pi\sigma)+log((1+\frac{x-\theta}{\sigma})^2)=-nlog(\pi\sigma)-\sum_{i=1}^{n}log((1+\frac{x-\theta}{\sigma})^2)
+\end{align}
+\begin{align}
+l'(\theta)=-\sum_{i=1}^{n}\frac{\frac{-2(x-\theta)}{\sigma^2}}{(1+\frac{x-\theta}{\sigma})^2}=\frac{2}{\sigma}\sum_{i=1}^{n}\frac{\frac{x-\theta}{\sigma}}{1+(\frac{x-\theta}{\sigma})^2}
+\end{align}
+\begin{align}
+l''(\theta)=\frac{2}{\sigma}\sum_{i=1}^{n}\frac{\frac{-1}{\sigma}((1+(\frac{x-\theta}{\sigma})^2-2\frac{x-\theta}{\sigma}\frac{x-\theta}{\sigma})}{(1+(\frac{x-\theta}{\sigma})^2)^2}=\frac{-2}{\sigma^2}\sum_{i=1}^{n}\frac{1-(\frac{x-\theta}{\sigma})^2}{(1+(\frac{x-\theta}{\sigma})^2)^2}
+\end{align}

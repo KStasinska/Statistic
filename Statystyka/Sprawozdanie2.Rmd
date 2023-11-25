@@ -1,0 +1,1053 @@
+---
+title: "Sprawozdanie2"
+author: "Katarzyna Stasińska"
+date: '2023'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# zadanie 1
+```{r,echo=FALSE}
+set.seed(123)
+
+oblicz_statystyki=function(X,theta){
+  MSE <- sum(((X-theta)^2)*0.0001)
+  var <- sum(((X-mean(X))^2)*0.0001)
+  bias <- mean(X)-theta
+  return(list(MSE,var,bias))
+}
+
+df <- data.frame(matrix(ncol = 5, nrow = 0))
+x <- c("p=0.1", "p=0.3", "p=0.5","p=0.7","p=0.9")
+colnames(df) <- x
+
+for (i in 1:10000){
+  mle1=mean(rbinom(50,5,0.1))*1/5
+  mle2=mean(rbinom(50,5,0.3))*1/5
+  mle3=mean(rbinom(50,5,0.5))*1/5
+  mle4=mean(rbinom(50,5,0.7))*1/5
+  mle5=mean(rbinom(50,5,0.9))*1/5
+  Y1=1-pbinom(2,5,mle1)
+  Y2=1-pbinom(2,5,mle2)
+  Y3=1-pbinom(2,5,mle3)
+  Y4=1-pbinom(2,5,mle4)
+  Y5=1-pbinom(2,5,mle5)
+  vec=c(Y1,Y2,Y3,Y4,Y5)
+  df[nrow(df)+1,] <- vec
+}
+l=layout(matrix(c(1,2,3,4,5,6), nrow = 2, ncol = 3, byrow = TRUE))
+hist(df$`p=0.1`, main = paste('P(b(5,0.1)>=3) to',round(1-pbinom(2,5,0.1),4)))
+hist(df$`p=0.3`, main = paste('P(b(5,0.3)>=3) to',round(1-pbinom(2,5,0.3),4)))
+hist(df$`p=0.5`, main = paste('P(b(5,0.5)>=3) to',round(1-pbinom(2,5,0.5),4)))
+hist(df$`p=0.7`, main = paste('P(b(5,0.7)>=3) to',round(1-pbinom(2,5,0.7),4)))
+hist(df$`p=0.9`, main = paste('P(b(5,0.9)>=3) to',round(1-pbinom(2,5,0.9),4)))
+
+```
+
+Zwróćmy uwagę, że MSE, var i bias są prawie takie same dla $p=0.1$ i $p=0.9$ oraz dla $p=0.3$ i $p=0.5$, bo są to sytuacje symetryczne. Estymatory $P(X\geq3)$ są dobrze wyznaczone, są bliskie wartościom teoretycznym. Wartości MSE, var i bias są minimalizowane. 
+
+```{r, echo=FALSE}
+df2 <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df2) <- x
+
+df2[nrow(df2)+1,] <- oblicz_statystyki(df$`p=0.1`,1-pbinom(2,5,0.1))
+df2[nrow(df2)+1,] <- oblicz_statystyki(df$`p=0.3`,1-pbinom(2,5,0.3))
+df2[nrow(df2)+1,] <- oblicz_statystyki(df$`p=0.5`,1-pbinom(2,5,0.5))
+df2[nrow(df2)+1,] <- oblicz_statystyki(df$`p=0.7`,1-pbinom(2,5,0.7))
+df2[nrow(df2)+1,] <- oblicz_statystyki(df$`p=0.9`,1-pbinom(2,5,0.9))
+df2
+```
+
+# zadanie 2
+
+Zobaczmy jak prezentują się estymatory największej wiarygodności wielkości $P(X=x)$ dla nieparzystych x na histogramach, a następnie przyjrzyjmy się var, mse i biasowi.
+
+## a)
+
+```{r,echo=FALSE}
+set.seed(123)
+df1 <- data.frame(matrix(ncol = 5, nrow = 0))
+df2 <- data.frame(matrix(ncol = 5, nrow = 0))
+df3 <- data.frame(matrix(ncol = 5, nrow = 0))
+df4 <- data.frame(matrix(ncol = 5, nrow = 0))
+x <- c(1,3,5,7,9)
+colnames(df1) <- x
+colnames(df2) <- x
+colnames(df3) <- x
+colnames(df4) <- x
+
+for (i in 1:10000){
+  X1=rpois(50,0.5)
+  X2=rpois(50,1)
+  X3=rpois(50,2)
+  X4=rpois(50,5)
+  mle1=mean(X1)
+  mle2=mean(X2)
+  mle3=mean(X3)
+  mle4=mean(X4)
+  wynik1=list()
+  wynik2=list()
+  wynik3=list()
+  wynik4=list()
+  for (j in c(1,3,5,7,9)){
+    wynik1=c(wynik1,mle1^j*exp(-mle1)/factorial(j))
+    wynik2=c(wynik2,mle2^j*exp(-mle2)/factorial(j))
+    wynik3=c(wynik3,mle3^j*exp(-mle3)/factorial(j))
+    wynik4=c(wynik4,mle4^j*exp(-mle4)/factorial(j))
+  }
+  df1[nrow(df1)+1,] = wynik1
+  df2[nrow(df2)+1,] = wynik2
+  df3[nrow(df3)+1,] = wynik3
+  df4[nrow(df4)+1,] = wynik4
+    
+}
+
+l=layout(matrix(c(1,2,3,4,5,6), nrow = 2, ncol = 3, byrow = TRUE))
+hist(df1$`1`, main = paste('P(poiss(0.5)=1) to',round(0.5^1*exp(-0.5)/factorial(1),4)))
+hist(df1$`3`, main = paste('P(poiss(0.5)=3) to',round(0.5^3*exp(-0.5)/factorial(3),4)))
+hist(df1$`5`, main = paste('P(poiss(0.5)=5) to',round(0.5^5*exp(-0.5)/factorial(5),4)))
+hist(df1$`7`, main = paste('P(poiss(0.5)=7) to',round(0.5^7*exp(-0.5)/factorial(7),4)))
+hist(df1$`9`, main = paste('P(poiss(0.5)=9) to',round(0.5^9*exp(-0.5)/factorial(9),4)))
+```
+
+Estymatory są poprawnie wyznaczone, bo są bliskie ich wartościom teoretycznym. Możemy zauważyć, że im większy x tym mniejsze MSE, var i bias.
+
+```{r,echo=FALSE}
+df1stat <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df1stat) <- x
+
+df1stat[nrow(df1stat)+1,] <- oblicz_statystyki(df1$`1`,0.5^1*exp(-0.5)/factorial(1))
+df1stat[nrow(df1stat)+1,] <- oblicz_statystyki(df1$`3`,0.5^3*exp(-0.5)/factorial(3))
+df1stat[nrow(df1stat)+1,] <- oblicz_statystyki(df1$`5`,0.5^5*exp(-0.5)/factorial(5))
+df1stat[nrow(df1stat)+1,] <- oblicz_statystyki(df1$`7`,0.5^7*exp(-0.5)/factorial(7))
+df1stat[nrow(df1stat)+1,] <- oblicz_statystyki(df1$`9`,0.5^9*exp(-0.5)/factorial(9))
+df1stat
+```
+
+## b)
+
+```{r,echo=FALSE}
+l=layout(matrix(c(1,2,3,4,5,6), nrow = 2, ncol = 3, byrow = TRUE))
+hist(df2$`1`, main = paste('P(poiss(1)=1) to',round(1^1*exp(-1)/factorial(1),4)))
+hist(df2$`3`, main = paste('P(poiss(1)=3) to',round(1^3*exp(-1)/factorial(3),4)))
+hist(df2$`5`, main = paste('P(poiss(1)=5) to',round(1^5*exp(-1)/factorial(5),4)))
+hist(df2$`7`, main = paste('P(poiss(1)=7) to',round(1^7*exp(-1)/factorial(7),4)))
+hist(df2$`9`, main = paste('P(poiss(1)=9) to',round(1^9*exp(-1)/factorial(9),4)))
+```
+
+W tym przypadku estymatory również zostały dobrze zdefiniowane. I również zauważalna jest zależność, im większy x tym mniejsze MSE, var i bias.
+
+```{r,echo=FALSE}
+df2stat <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df2stat) <- x
+
+df2stat[nrow(df2stat)+1,] <- oblicz_statystyki(df2$`1`,1^1*exp(-1)/factorial(1))
+df2stat[nrow(df2stat)+1,] <- oblicz_statystyki(df2$`3`,1^3*exp(-1)/factorial(3))
+df2stat[nrow(df2stat)+1,] <- oblicz_statystyki(df2$`5`,1^5*exp(-1)/factorial(5))
+df2stat[nrow(df2stat)+1,] <- oblicz_statystyki(df2$`7`,1^7*exp(-1)/factorial(7))
+df2stat[nrow(df2stat)+1,] <- oblicz_statystyki(df2$`9`,1^9*exp(-1)/factorial(9))
+df2stat
+```
+
+## c)
+
+```{r,echo=FALSE}
+l=layout(matrix(c(1,2,3,4,5,6), nrow = 2, ncol = 3, byrow = TRUE))
+hist(df3$`1`, main = paste('P(poiss(2)=1) to',round(2^1*exp(-2)/factorial(1),4)))
+hist(df3$`3`, main = paste('P(poiss(2)=3) to',round(2^3*exp(-2)/factorial(3),4)))
+hist(df3$`5`, main = paste('P(poiss(2)=5) to',round(2^5*exp(-2)/factorial(5),4)))
+hist(df3$`7`, main = paste('P(poiss(2)=7) to',round(2^7*exp(-2)/factorial(7),4)))
+hist(df3$`9`, main = paste('P(poiss(2)=9) to',round(2^9*exp(-2)/factorial(9),4)))
+```
+
+W tym przypadku estymatory również zostały dobrze zdefiniowane. I również zauważalna jest zależność, im większy x tym mniejsze MSE, var i bias, ale od $x=5$, a wcześniej następują pewne wahania tych wartości.
+
+```{r,echo=FALSE}
+df3stat <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df3stat) <- x
+
+df3stat[nrow(df3stat)+1,] <- oblicz_statystyki(df3$`1`,2^1*exp(-2)/factorial(1))
+df3stat[nrow(df3stat)+1,] <- oblicz_statystyki(df3$`3`,2^3*exp(-2)/factorial(3))
+df3stat[nrow(df3stat)+1,] <- oblicz_statystyki(df3$`5`,2^5*exp(-2)/factorial(5))
+df3stat[nrow(df3stat)+1,] <- oblicz_statystyki(df3$`7`,2^7*exp(-2)/factorial(7))
+df3stat[nrow(df3stat)+1,] <- oblicz_statystyki(df3$`9`,2^9*exp(-2)/factorial(9))
+df3stat
+```
+
+## d)
+
+```{r,echo=FALSE}
+l=layout(matrix(c(1,2,3,4,5,6), nrow = 2, ncol = 3, byrow = TRUE))
+hist(df4$`1`, main = paste('P(poiss(5)=1) to',round(5^1*exp(-5)/factorial(1),4)))
+hist(df4$`3`, main = paste('P(poiss(5)=3) to',round(5^3*exp(-5)/factorial(3),4)))
+hist(df4$`5`, main = paste('P(poiss(5)=5) to',round(5^5*exp(-5)/factorial(5),4)))
+hist(df4$`7`, main = paste('P(poiss(5)=7) to',round(5^7*exp(-5)/factorial(7),4)))
+hist(df4$`9`, main = paste('P(poiss(5)=9) to',round(5^9*exp(-5)/factorial(9),4)))
+```
+
+W tym przypadku estymatory również zostały dobrze zdefiniowane. I również zauważalna jest zależność, im większy x tym mniejsze MSE, var i bias, ale od $x=7$, a wcześniej następuje niewielki wzrost tych wszystkich trzech wartości.
+
+```{r,echo=FALSE}
+df4stat <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df4stat) <- x
+
+df4stat[nrow(df4stat)+1,] <- oblicz_statystyki(df4$`1`,5^1*exp(-5)/factorial(1))
+df4stat[nrow(df4stat)+1,] <- oblicz_statystyki(df4$`3`,5^3*exp(-5)/factorial(3))
+df4stat[nrow(df4stat)+1,] <- oblicz_statystyki(df4$`5`,5^5*exp(-5)/factorial(5))
+df4stat[nrow(df4stat)+1,] <- oblicz_statystyki(df4$`7`,5^7*exp(-5)/factorial(7))
+df4stat[nrow(df4stat)+1,] <- oblicz_statystyki(df4$`9`,5^9*exp(-5)/factorial(9))
+df4stat
+```
+
+We wszystkich czterech podpunktach od pewnego $x_{0}$, wartości MSE, var i bias istotnie maleją (wcześniej następuje niewielkie wahania, raczej wzrostowe). Im większa $\lambda$, tym większy $x_{0}$.
+
+# zadanie 3
+Korzystając z różnego rodzaju wbudowanych funkcji, które zwracają nam wylosowane dane, tak naprawdę dostajemy pseudolosowe dane. Polega to na tym, że dajemy pewnej funkcji liczbę i ona generuje następną, potem pobiera drugą (chwilę wcześniej wyliczoną) jako argument i generuje kolejną. W ten sposób na podstawie jednej liczby mamy ciąg, dane te nie są w pełni niezależne, ale są na tyle, że korzysta się z nich jako losowych. Jednym z powodów takiego działania jest konieczność spełnienia możliwości odtworzenia konkretnej próby. Generator liczb pseudolosowych z rozkładu normalnego potrafi w łatwy i szybki sposób generować duże ilości prób z danego rozkładu, co jest wykorzystywane w większości metod Monte Carlo.
+
+# zadanie 4
+```{r,echo=FALSE}
+n=50
+set.seed(123)
+theta=0.5
+fisher1=c()
+fisher2=c()
+fisher3=c()
+fisher4=c()
+for (i in 1:10000){
+  X1=rbeta(50,0.5,1)
+  X2=rbeta(50,1,1)
+  X3=rbeta(50,2,1)
+  X4=rbeta(50,5,1)
+  mletheta1=-n/sum(log(X1))
+  mletheta2=-n/sum(log(X2))
+  mletheta3=-n/sum(log(X3))
+  mletheta4=-n/sum(log(X4))
+  fisher1=append(fisher1,1/mletheta1^2)
+  fisher2=append(fisher2,1/mletheta2^2)
+  fisher3=append(fisher3,1/mletheta3^2)
+  fisher4=append(fisher4,1/mletheta4^2)
+}
+fishermean1=mean(fisher1)
+fishermean2=mean(fisher2)
+fishermean3=mean(fisher3)
+fishermean4=mean(fisher4)
+Y1=c()
+Y2=c()
+Y3=c()
+Y4=c()
+for (i in 1:10000){
+  X1=rbeta(50,0.5,1)
+  X2=rbeta(50,1,1)
+  X3=rbeta(50,2,1)
+  X4=rbeta(50,5,1)
+  mletheta1=-n/sum(log(X1))
+  mletheta2=-n/sum(log(X2))
+  mletheta3=-n/sum(log(X3))
+  mletheta4=-n/sum(log(X4))
+  y1=sqrt(n*fishermean1)*(mletheta1-theta)
+  y2=sqrt(n*fishermean2)*(mletheta2-theta)
+  y3=sqrt(n*fishermean3)*(mletheta3-theta)
+  y4=sqrt(n*fishermean4)*(mletheta4-theta)
+  Y1=append(Y1,y1)
+  Y2=append(Y2,y2)
+  Y3=append(Y3,y3)
+  Y4=append(Y4,y4)
+}
+l=layout(matrix(c(1,2,3,4), nrow = 2, ncol = 2, byrow = TRUE))
+hist(Y1)
+qqnorm(Y1)
+qqline(Y1, col = "steelblue", lwd = 1)
+hist(Y2)
+qqnorm(Y2)
+qqline(Y2, col = "steelblue", lwd = 1)
+
+l=layout(matrix(c(1,2,3,4), nrow = 2, ncol = 2, byrow = TRUE))
+hist(Y3)
+qqnorm(Y3)
+qqline(Y3, col = "steelblue", lwd = 1)
+hist(Y4)
+qqnorm(Y4)
+qqline(Y4, col = "steelblue", lwd = 1)
+```
+
+Rozkład zmiennej Y jest zbliżony do normalnego, co można zauważyć na wykresach kwantylowo-kwantylowych. Jest to zgodne z twierdzeniem z wykładu mówiącym o tym, że $\sqrt{n}(\hat\theta_{n}-\theta_{0}) \rightarrow N(0,(I(\theta_{0}))^{-1})$.
+
+Rozważmy wykres 1 w zależności od liczby klas. Domyślnie używana jest liczba klas, która wynika ze wzoru Sturgesa, zestawimy ją z liczbą klas równą 3 oraz 100.
+
+```{r,echo=FALSE}
+l=layout(matrix(c(1,2,3), nrow = 1, ncol = 3, byrow = TRUE))
+hist(Y1,breaks=2)
+hist(Y1)
+hist(Y1,breaks=99)
+```
+Możemy zwrócić uwagę, że skrajne wykresy są nieczytelne, ten z 3 klasami niewiele nam mówi o danych, jest zbyt ogólny. Z kolei ten ze 100 klasami jest zbyt szczegółowy. Liczba klas wyznaczona przez wzór Sturgesa plasująca się pomiędzy tymi dwoma, najlepiej przedstawia kolejne wartości zmiennej Y.
+
+Im więcej kwantyli znamy tym łatwiej przybliżyć nam rozkład danej zmiennej. Na wykresach qqnorm więcej kwantyli skutkuje większą liczbą punktów na wykresie przez co nasz zbiór punktów coraz bardziej przypomina funkcję ciągłą, którą z kolei łatwiej analizować.
+
+# Zadanie 5
+
+W przypadku $\hat\theta_{3}$ postanowiłam jak na liście 1, że wektorem z wagami, będzie znormalizowany wektor wygenerowany przez $\varphi(\Phi^{-1}(\frac{i-1}{n-1}))$, gdzie oznaczenia są takie same jak w podpunkcie (iv).
+
+```{r, echo=FALSE}
+oblicz_estymatory=function(X,n){
+    a=mean(X)
+    b=median(X)
+    vector=dnorm(qnorm((1:n-1)/(n-1)))
+    weights=vector/sum(vector)
+    c=weighted.mean(X,weights)
+    weights2=dnorm(qnorm((1:n-1)/n))-dnorm(qnorm(1:n/n))
+    d=sum(sort(X)*weights2)
+  return(c(a,b,c,d))
+}
+
+oblicz_statystyki2=function(df,theta){
+  MSE <- colSums(apply(df[, 1:4], 2, function(x) (x-theta)^2))*1/10000
+  var <- colSums(apply(df[, 1:4], 2, function(x) (x-mean(x))^2))*1/10000
+  bias <- colMeans(df)-theta
+  return(list(MSE,var,bias))
+}
+
+wykresy=function(df){
+  l=layout(matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2, byrow = TRUE)) 
+  hist(df$theta1)
+  hist(df$theta2)
+  hist(df$theta3)
+  hist(df$theta4)
+  return(df)
+}
+```
+
+## a)
+
+```{r,echo=FALSE}
+library(VGAM)
+df <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("theta1", "theta2", "theta3","theta4")
+colnames(df) <- x
+
+for (i in 1:10000){
+  X=rlaplace(50,1,1)
+  vec=oblicz_estymatory(X,50)
+  df[nrow(df)+1,] <- vec
+}
+
+df=wykresy(df)
+
+y=oblicz_statystyki2(df,1)
+y
+```
+
+## b)
+
+```{r,echo=FALSE}
+library(VGAM)
+df <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("theta1", "theta2", "theta3","theta4")
+colnames(df) <- x
+
+for (i in 1:10000){
+  X=rlaplace(50,4,1)
+  vec=oblicz_estymatory(X,50)
+  df[nrow(df)+1,] <- vec
+}
+
+df=wykresy(df)
+
+y=oblicz_statystyki2(df,4)
+y
+```
+
+## c)
+
+```{r,echo=FALSE}
+library(VGAM)
+df <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("theta1", "theta2", "theta3","theta4")
+colnames(df) <- x
+
+for (i in 1:10000){
+  X=rlaplace(50,1,2)
+  vec=oblicz_estymatory(X,50)
+  df[nrow(df)+1,] <- vec
+}
+
+df=wykresy(df)
+
+y=oblicz_statystyki2(df,1)
+y
+```
+
+Zwróćmy uwagę, że estymatory $\hat\theta_{4}$ ponownie odstają. Przede wszystkim już same środki histogramów nie są w przybliżeniu równe odpowiednio 1 i 4. Najbardziej optymalny jest $\hat\theta_{2}$, czyli mediana, bo w każdym przypadku najlepiej minimalizuje MSE, var i bias. Na wykładzie dowiedliśmy, że mediana jest dwa razy bardziej efektywna niż średnia w przypadku rozkładu Laplace'a i ta zależność też jest widoczna. W zadaniu na poprzedniej liście najlepszym estymatorem była średnia.
+
+# Zadanie 6
+## zadanie 1 n=20
+
+```{r,echo=FALSE}
+df <- data.frame(matrix(ncol = 5, nrow = 0))
+x <- c("p=0.1", "p=0.3", "p=0.5","p=0.7","p=0.9")
+colnames(df) <- x
+
+for (i in 1:10000){
+  mle1=mean(rbinom(20,5,0.1))*1/5
+  mle2=mean(rbinom(20,5,0.3))*1/5
+  mle3=mean(rbinom(20,5,0.5))*1/5
+  mle4=mean(rbinom(20,5,0.7))*1/5
+  mle5=mean(rbinom(20,5,0.9))*1/5
+  Y1=1-pbinom(2,5,mle1)
+  Y2=1-pbinom(2,5,mle2)
+  Y3=1-pbinom(2,5,mle3)
+  Y4=1-pbinom(2,5,mle4)
+  Y5=1-pbinom(2,5,mle5)
+  vec=c(Y1,Y2,Y3,Y4,Y5)
+  df[nrow(df)+1,] <- vec
+}
+l=layout(matrix(c(1,2,3,4,5,6), nrow = 2, ncol = 3, byrow = TRUE))
+hist(df$`p=0.1`, main = paste('P(b(5,0.1)>=3) to',round(1-pbinom(2,5,0.1),4)))
+hist(df$`p=0.3`, main = paste('P(b(5,0.3)>=3) to',round(1-pbinom(2,5,0.3),4)))
+hist(df$`p=0.5`, main = paste('P(b(5,0.5)>=3) to',round(1-pbinom(2,5,0.5),4)))
+hist(df$`p=0.7`, main = paste('P(b(5,0.7)>=3) to',round(1-pbinom(2,5,0.7),4)))
+hist(df$`p=0.9`, main = paste('P(b(5,0.9)>=3) to',round(1-pbinom(2,5,0.9),4)))
+```
+
+```{r, echo=FALSE}
+df2 <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df2) <- x
+
+df2[nrow(df2)+1,] <- oblicz_statystyki(df$`p=0.1`,1-pbinom(2,5,0.1))
+df2[nrow(df2)+1,] <- oblicz_statystyki(df$`p=0.3`,1-pbinom(2,5,0.3))
+df2[nrow(df2)+1,] <- oblicz_statystyki(df$`p=0.5`,1-pbinom(2,5,0.5))
+df2[nrow(df2)+1,] <- oblicz_statystyki(df$`p=0.7`,1-pbinom(2,5,0.7))
+df2[nrow(df2)+1,] <- oblicz_statystyki(df$`p=0.9`,1-pbinom(2,5,0.9))
+df2
+```
+
+## zadanie 1 n=100
+
+```{r,echo=FALSE}
+df <- data.frame(matrix(ncol = 5, nrow = 0))
+x <- c("p=0.1", "p=0.3", "p=0.5","p=0.7","p=0.9")
+colnames(df) <- x
+
+for (i in 1:10000){
+  mle1=mean(rbinom(100,5,0.1))*1/5
+  mle2=mean(rbinom(100,5,0.3))*1/5
+  mle3=mean(rbinom(100,5,0.5))*1/5
+  mle4=mean(rbinom(100,5,0.7))*1/5
+  mle5=mean(rbinom(100,5,0.9))*1/5
+  Y1=1-pbinom(2,5,mle1)
+  Y2=1-pbinom(2,5,mle2)
+  Y3=1-pbinom(2,5,mle3)
+  Y4=1-pbinom(2,5,mle4)
+  Y5=1-pbinom(2,5,mle5)
+  vec=c(Y1,Y2,Y3,Y4,Y5)
+  df[nrow(df)+1,] <- vec
+}
+l=layout(matrix(c(1,2,3,4,5,6), nrow = 2, ncol = 3, byrow = TRUE))
+hist(df$`p=0.1`, main = paste('P(b(5,0.1)>=3) to',round(1-pbinom(2,5,0.1),4)))
+hist(df$`p=0.3`, main = paste('P(b(5,0.3)>=3) to',round(1-pbinom(2,5,0.3),4)))
+hist(df$`p=0.5`, main = paste('P(b(5,0.5)>=3) to',round(1-pbinom(2,5,0.5),4)))
+hist(df$`p=0.7`, main = paste('P(b(5,0.7)>=3) to',round(1-pbinom(2,5,0.7),4)))
+hist(df$`p=0.9`, main = paste('P(b(5,0.9)>=3) to',round(1-pbinom(2,5,0.9),4)))
+```
+
+```{r, echo=FALSE}
+df2 <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df2) <- x
+
+df2[nrow(df2)+1,] <- oblicz_statystyki(df$`p=0.1`,1-pbinom(2,5,0.1))
+df2[nrow(df2)+1,] <- oblicz_statystyki(df$`p=0.3`,1-pbinom(2,5,0.3))
+df2[nrow(df2)+1,] <- oblicz_statystyki(df$`p=0.5`,1-pbinom(2,5,0.5))
+df2[nrow(df2)+1,] <- oblicz_statystyki(df$`p=0.7`,1-pbinom(2,5,0.7))
+df2[nrow(df2)+1,] <- oblicz_statystyki(df$`p=0.9`,1-pbinom(2,5,0.9))
+df2
+```
+
+W zadaniu 1 nie widać dużego wpływu rozmiaru próbki na wyniki, ale zachodzi stwierdzenie, że im większa próbka tym MSE, var i bias mniejsze.
+
+## zadanie 2 n=20
+### a)
+
+```{r,echo=FALSE}
+set.seed(123)
+df1 <- data.frame(matrix(ncol = 5, nrow = 0))
+df2 <- data.frame(matrix(ncol = 5, nrow = 0))
+df3 <- data.frame(matrix(ncol = 5, nrow = 0))
+df4 <- data.frame(matrix(ncol = 5, nrow = 0))
+x <- c(1,3,5,7,9)
+colnames(df1) <- x
+colnames(df2) <- x
+colnames(df3) <- x
+colnames(df4) <- x
+
+for (i in 1:10000){
+  X1=rpois(20,0.5)
+  X2=rpois(20,1)
+  X3=rpois(20,2)
+  X4=rpois(20,5)
+  mle1=mean(X1)
+  mle2=mean(X2)
+  mle3=mean(X3)
+  mle4=mean(X4)
+  wynik1=list()
+  wynik2=list()
+  wynik3=list()
+  wynik4=list()
+  for (j in c(1,3,5,7,9)){
+    wynik1=c(wynik1,mle1^j*exp(-mle1)/factorial(j))
+    wynik2=c(wynik2,mle2^j*exp(-mle2)/factorial(j))
+    wynik3=c(wynik3,mle3^j*exp(-mle3)/factorial(j))
+    wynik4=c(wynik4,mle4^j*exp(-mle4)/factorial(j))
+  }
+  df1[nrow(df1)+1,] = wynik1
+  df2[nrow(df2)+1,] = wynik2
+  df3[nrow(df3)+1,] = wynik3
+  df4[nrow(df4)+1,] = wynik4
+    
+}
+
+l=layout(matrix(c(1,2,3,4,5,6), nrow = 2, ncol = 3, byrow = TRUE))
+hist(df1$`1`, main = paste('P(poiss(0.5)=1) to',round(0.5^1*exp(-0.5)/factorial(1),4)))
+hist(df1$`3`, main = paste('P(poiss(0.5)=3) to',round(0.5^3*exp(-0.5)/factorial(3),4)))
+hist(df1$`5`, main = paste('P(poiss(0.5)=5) to',round(0.5^5*exp(-0.5)/factorial(5),4)))
+hist(df1$`7`, main = paste('P(poiss(0.5)=7) to',round(0.5^7*exp(-0.5)/factorial(7),4)))
+hist(df1$`9`, main = paste('P(poiss(0.5)=9) to',round(0.5^9*exp(-0.5)/factorial(9),4)))
+```
+
+```{r,echo=FALSE}
+df1stat <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df1stat) <- x
+
+df1stat[nrow(df1stat)+1,] <- oblicz_statystyki(df1$`1`,0.5^1*exp(-0.5)/factorial(1))
+df1stat[nrow(df1stat)+1,] <- oblicz_statystyki(df1$`3`,0.5^3*exp(-0.5)/factorial(3))
+df1stat[nrow(df1stat)+1,] <- oblicz_statystyki(df1$`5`,0.5^5*exp(-0.5)/factorial(5))
+df1stat[nrow(df1stat)+1,] <- oblicz_statystyki(df1$`7`,0.5^7*exp(-0.5)/factorial(7))
+df1stat[nrow(df1stat)+1,] <- oblicz_statystyki(df1$`9`,0.5^9*exp(-0.5)/factorial(9))
+df1stat
+```
+
+### b)
+
+
+```{r,echo=FALSE}
+l=layout(matrix(c(1,2,3,4,5,6), nrow = 2, ncol = 3, byrow = TRUE))
+hist(df2$`1`, main = paste('P(poiss(1)=1) to',round(1^1*exp(-1)/factorial(1),4)))
+hist(df2$`3`, main = paste('P(poiss(1)=3) to',round(1^3*exp(-1)/factorial(3),4)))
+hist(df2$`5`, main = paste('P(poiss(1)=5) to',round(1^5*exp(-1)/factorial(5),4)))
+hist(df2$`7`, main = paste('P(poiss(1)=7) to',round(1^7*exp(-1)/factorial(7),4)))
+hist(df2$`9`, main = paste('P(poiss(1)=9) to',round(1^9*exp(-1)/factorial(9),4)))
+```
+
+```{r,echo=FALSE}
+df2stat <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df2stat) <- x
+
+df2stat[nrow(df2stat)+1,] <- oblicz_statystyki(df2$`1`,1^1*exp(-1)/factorial(1))
+df2stat[nrow(df2stat)+1,] <- oblicz_statystyki(df2$`3`,1^3*exp(-1)/factorial(3))
+df2stat[nrow(df2stat)+1,] <- oblicz_statystyki(df2$`5`,1^5*exp(-1)/factorial(5))
+df2stat[nrow(df2stat)+1,] <- oblicz_statystyki(df2$`7`,1^7*exp(-1)/factorial(7))
+df2stat[nrow(df2stat)+1,] <- oblicz_statystyki(df2$`9`,1^9*exp(-1)/factorial(9))
+df2stat
+```
+
+### c)
+
+```{r,echo=FALSE}
+l=layout(matrix(c(1,2,3,4,5,6), nrow = 2, ncol = 3, byrow = TRUE))
+hist(df3$`1`, main = paste('P(poiss(2)=1) to',round(2^1*exp(-2)/factorial(1),4)))
+hist(df3$`3`, main = paste('P(poiss(2)=3) to',round(2^3*exp(-2)/factorial(3),4)))
+hist(df3$`5`, main = paste('P(poiss(2)=5) to',round(2^5*exp(-2)/factorial(5),4)))
+hist(df3$`7`, main = paste('P(poiss(2)=7) to',round(2^7*exp(-2)/factorial(7),4)))
+hist(df3$`9`, main = paste('P(poiss(2)=9) to',round(2^9*exp(-2)/factorial(9),4)))
+```
+
+```{r,echo=FALSE}
+df3stat <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df3stat) <- x
+
+df3stat[nrow(df3stat)+1,] <- oblicz_statystyki(df3$`1`,2^1*exp(-2)/factorial(1))
+df3stat[nrow(df3stat)+1,] <- oblicz_statystyki(df3$`3`,2^3*exp(-2)/factorial(3))
+df3stat[nrow(df3stat)+1,] <- oblicz_statystyki(df3$`5`,2^5*exp(-2)/factorial(5))
+df3stat[nrow(df3stat)+1,] <- oblicz_statystyki(df3$`7`,2^7*exp(-2)/factorial(7))
+df3stat[nrow(df3stat)+1,] <- oblicz_statystyki(df3$`9`,2^9*exp(-2)/factorial(9))
+df3stat
+```
+
+### d)
+
+```{r,echo=FALSE}
+l=layout(matrix(c(1,2,3,4,5,6), nrow = 2, ncol = 3, byrow = TRUE))
+hist(df4$`1`, main = paste('P(poiss(5)=1) to',round(5^1*exp(-5)/factorial(1),4)))
+hist(df4$`3`, main = paste('P(poiss(5)=3) to',round(5^3*exp(-5)/factorial(3),4)))
+hist(df4$`5`, main = paste('P(poiss(5)=5) to',round(5^5*exp(-5)/factorial(5),4)))
+hist(df4$`7`, main = paste('P(poiss(5)=7) to',round(5^7*exp(-5)/factorial(7),4)))
+hist(df4$`9`, main = paste('P(poiss(5)=9) to',round(5^9*exp(-5)/factorial(9),4)))
+```
+
+```{r,echo=FALSE}
+df4stat <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df4stat) <- x
+
+df4stat[nrow(df4stat)+1,] <- oblicz_statystyki(df4$`1`,5^1*exp(-5)/factorial(1))
+df4stat[nrow(df4stat)+1,] <- oblicz_statystyki(df4$`3`,5^3*exp(-5)/factorial(3))
+df4stat[nrow(df4stat)+1,] <- oblicz_statystyki(df4$`5`,5^5*exp(-5)/factorial(5))
+df4stat[nrow(df4stat)+1,] <- oblicz_statystyki(df4$`7`,5^7*exp(-5)/factorial(7))
+df4stat[nrow(df4stat)+1,] <- oblicz_statystyki(df4$`9`,5^9*exp(-5)/factorial(9))
+df4stat
+```
+
+## zadanie 2 n=100
+### a)
+
+```{r,echo=FALSE}
+set.seed(123)
+df1 <- data.frame(matrix(ncol = 5, nrow = 0))
+df2 <- data.frame(matrix(ncol = 5, nrow = 0))
+df3 <- data.frame(matrix(ncol = 5, nrow = 0))
+df4 <- data.frame(matrix(ncol = 5, nrow = 0))
+x <- c(1,3,5,7,9)
+colnames(df1) <- x
+colnames(df2) <- x
+colnames(df3) <- x
+colnames(df4) <- x
+
+for (i in 1:10000){
+  X1=rpois(100,0.5)
+  X2=rpois(100,1)
+  X3=rpois(100,2)
+  X4=rpois(100,5)
+  mle1=mean(X1)
+  mle2=mean(X2)
+  mle3=mean(X3)
+  mle4=mean(X4)
+  wynik1=list()
+  wynik2=list()
+  wynik3=list()
+  wynik4=list()
+  for (j in c(1,3,5,7,9)){
+    wynik1=c(wynik1,mle1^j*exp(-mle1)/factorial(j))
+    wynik2=c(wynik2,mle2^j*exp(-mle2)/factorial(j))
+    wynik3=c(wynik3,mle3^j*exp(-mle3)/factorial(j))
+    wynik4=c(wynik4,mle4^j*exp(-mle4)/factorial(j))
+  }
+  df1[nrow(df1)+1,] = wynik1
+  df2[nrow(df2)+1,] = wynik2
+  df3[nrow(df3)+1,] = wynik3
+  df4[nrow(df4)+1,] = wynik4
+    
+}
+
+l=layout(matrix(c(1,2,3,4,5,6), nrow = 2, ncol = 3, byrow = TRUE))
+hist(df1$`1`, main = paste('P(poiss(0.5)=1) to',round(0.5^1*exp(-0.5)/factorial(1),4)))
+hist(df1$`3`, main = paste('P(poiss(0.5)=3) to',round(0.5^3*exp(-0.5)/factorial(3),4)))
+hist(df1$`5`, main = paste('P(poiss(0.5)=5) to',round(0.5^5*exp(-0.5)/factorial(5),4)))
+hist(df1$`7`, main = paste('P(poiss(0.5)=7) to',round(0.5^7*exp(-0.5)/factorial(7),4)))
+hist(df1$`9`, main = paste('P(poiss(0.5)=9) to',round(0.5^9*exp(-0.5)/factorial(9),4)))
+```
+
+```{r,echo=FALSE}
+df1stat <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df1stat) <- x
+
+df1stat[nrow(df1stat)+1,] <- oblicz_statystyki(df1$`1`,0.5^1*exp(-0.5)/factorial(1))
+df1stat[nrow(df1stat)+1,] <- oblicz_statystyki(df1$`3`,0.5^3*exp(-0.5)/factorial(3))
+df1stat[nrow(df1stat)+1,] <- oblicz_statystyki(df1$`5`,0.5^5*exp(-0.5)/factorial(5))
+df1stat[nrow(df1stat)+1,] <- oblicz_statystyki(df1$`7`,0.5^7*exp(-0.5)/factorial(7))
+df1stat[nrow(df1stat)+1,] <- oblicz_statystyki(df1$`9`,0.5^9*exp(-0.5)/factorial(9))
+df1stat
+```
+
+### b)
+
+```{r,echo=FALSE}
+l=layout(matrix(c(1,2,3,4,5,6), nrow = 2, ncol = 3, byrow = TRUE))
+hist(df2$`1`, main = paste('P(poiss(1)=1) to',round(1^1*exp(-1)/factorial(1),4)))
+hist(df2$`3`, main = paste('P(poiss(1)=3) to',round(1^3*exp(-1)/factorial(3),4)))
+hist(df2$`5`, main = paste('P(poiss(1)=5) to',round(1^5*exp(-1)/factorial(5),4)))
+hist(df2$`7`, main = paste('P(poiss(1)=7) to',round(1^7*exp(-1)/factorial(7),4)))
+hist(df2$`9`, main = paste('P(poiss(1)=9) to',round(1^9*exp(-1)/factorial(9),4)))
+```
+
+```{r,echo=FALSE}
+df2stat <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df2stat) <- x
+
+df2stat[nrow(df2stat)+1,] <- oblicz_statystyki(df2$`1`,1^1*exp(-1)/factorial(1))
+df2stat[nrow(df2stat)+1,] <- oblicz_statystyki(df2$`3`,1^3*exp(-1)/factorial(3))
+df2stat[nrow(df2stat)+1,] <- oblicz_statystyki(df2$`5`,1^5*exp(-1)/factorial(5))
+df2stat[nrow(df2stat)+1,] <- oblicz_statystyki(df2$`7`,1^7*exp(-1)/factorial(7))
+df2stat[nrow(df2stat)+1,] <- oblicz_statystyki(df2$`9`,1^9*exp(-1)/factorial(9))
+df2stat
+```
+
+### c)
+
+```{r,echo=FALSE}
+l=layout(matrix(c(1,2,3,4,5,6), nrow = 2, ncol = 3, byrow = TRUE))
+hist(df3$`1`, main = paste('P(poiss(2)=1) to',round(2^1*exp(-2)/factorial(1),4)))
+hist(df3$`3`, main = paste('P(poiss(2)=3) to',round(2^3*exp(-2)/factorial(3),4)))
+hist(df3$`5`, main = paste('P(poiss(2)=5) to',round(2^5*exp(-2)/factorial(5),4)))
+hist(df3$`7`, main = paste('P(poiss(2)=7) to',round(2^7*exp(-2)/factorial(7),4)))
+hist(df3$`9`, main = paste('P(poiss(2)=9) to',round(2^9*exp(-2)/factorial(9),4)))
+```
+
+```{r,echo=FALSE}
+df3stat <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df3stat) <- x
+
+df3stat[nrow(df3stat)+1,] <- oblicz_statystyki(df3$`1`,2^1*exp(-2)/factorial(1))
+df3stat[nrow(df3stat)+1,] <- oblicz_statystyki(df3$`3`,2^3*exp(-2)/factorial(3))
+df3stat[nrow(df3stat)+1,] <- oblicz_statystyki(df3$`5`,2^5*exp(-2)/factorial(5))
+df3stat[nrow(df3stat)+1,] <- oblicz_statystyki(df3$`7`,2^7*exp(-2)/factorial(7))
+df3stat[nrow(df3stat)+1,] <- oblicz_statystyki(df3$`9`,2^9*exp(-2)/factorial(9))
+df3stat
+```
+
+### d)
+
+```{r,echo=FALSE}
+l=layout(matrix(c(1,2,3,4,5,6), nrow = 2, ncol = 3, byrow = TRUE))
+hist(df4$`1`, main = paste('P(poiss(5)=1) to',round(5^1*exp(-5)/factorial(1),4)))
+hist(df4$`3`, main = paste('P(poiss(5)=3) to',round(5^3*exp(-5)/factorial(3),4)))
+hist(df4$`5`, main = paste('P(poiss(5)=5) to',round(5^5*exp(-5)/factorial(5),4)))
+hist(df4$`7`, main = paste('P(poiss(5)=7) to',round(5^7*exp(-5)/factorial(7),4)))
+hist(df4$`9`, main = paste('P(poiss(5)=9) to',round(5^9*exp(-5)/factorial(9),4)))
+```
+
+```{r,echo=FALSE}
+df4stat <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("MSE", "var", "bias")
+colnames(df4stat) <- x
+
+df4stat[nrow(df4stat)+1,] <- oblicz_statystyki(df4$`1`,5^1*exp(-5)/factorial(1))
+df4stat[nrow(df4stat)+1,] <- oblicz_statystyki(df4$`3`,5^3*exp(-5)/factorial(3))
+df4stat[nrow(df4stat)+1,] <- oblicz_statystyki(df4$`5`,5^5*exp(-5)/factorial(5))
+df4stat[nrow(df4stat)+1,] <- oblicz_statystyki(df4$`7`,5^7*exp(-5)/factorial(7))
+df4stat[nrow(df4stat)+1,] <- oblicz_statystyki(df4$`9`,5^9*exp(-5)/factorial(9))
+df4stat
+```
+
+W tym przypadku również im większe n, tym mniejsze MSE, var i bias. Wnioski dla wersji $n=50$ są prawidłowe również dla wersji $n=20$ i $n=100$
+
+## zadanie 4 n=20
+
+```{r,echo=FALSE}
+n=20
+set.seed(123)
+theta=0.5
+fisher1=c()
+fisher2=c()
+fisher3=c()
+fisher4=c()
+for (i in 1:10000){
+  X1=rbeta(20,0.5,1)
+  X2=rbeta(20,1,1)
+  X3=rbeta(20,2,1)
+  X4=rbeta(20,5,1)
+  mletheta1=-n/sum(log(X1))
+  mletheta2=-n/sum(log(X2))
+  mletheta3=-n/sum(log(X3))
+  mletheta4=-n/sum(log(X4))
+  fisher1=append(fisher1,1/mletheta1^2)
+  fisher2=append(fisher2,1/mletheta2^2)
+  fisher3=append(fisher3,1/mletheta3^2)
+  fisher4=append(fisher4,1/mletheta4^2)
+}
+fishermean1=mean(fisher1)
+fishermean2=mean(fisher2)
+fishermean3=mean(fisher3)
+fishermean4=mean(fisher4)
+Y1=c()
+Y2=c()
+Y3=c()
+Y4=c()
+for (i in 1:10000){
+  X1=rbeta(20,0.5,1)
+  X2=rbeta(20,1,1)
+  X3=rbeta(20,2,1)
+  X4=rbeta(20,5,1)
+  mletheta1=-n/sum(log(X1))
+  mletheta2=-n/sum(log(X2))
+  mletheta3=-n/sum(log(X3))
+  mletheta4=-n/sum(log(X4))
+  y1=sqrt(n*fishermean1)*(mletheta1-theta)
+  y2=sqrt(n*fishermean2)*(mletheta2-theta)
+  y3=sqrt(n*fishermean3)*(mletheta3-theta)
+  y4=sqrt(n*fishermean4)*(mletheta4-theta)
+  Y1=append(Y1,y1)
+  Y2=append(Y2,y2)
+  Y3=append(Y3,y3)
+  Y4=append(Y4,y4)
+}
+l=layout(matrix(c(1,2,3,4), nrow = 2, ncol = 2, byrow = TRUE))
+hist(Y1)
+qqnorm(Y1)
+qqline(Y1, col = "steelblue", lwd = 1)
+hist(Y2)
+qqnorm(Y2)
+qqline(Y2, col = "steelblue", lwd = 1)
+
+l=layout(matrix(c(1,2,3,4), nrow = 2, ncol = 2, byrow = TRUE))
+hist(Y3)
+qqnorm(Y3)
+qqline(Y3, col = "steelblue", lwd = 1)
+hist(Y4)
+qqnorm(Y4)
+qqline(Y4, col = "steelblue", lwd = 1)
+```
+
+## zadanie 4 n=100
+
+```{r,echo=FALSE}
+n=100
+set.seed(123)
+theta=0.5
+fisher1=c()
+fisher2=c()
+fisher3=c()
+fisher4=c()
+for (i in 1:10000){
+  X1=rbeta(100,0.5,1)
+  X2=rbeta(100,1,1)
+  X3=rbeta(100,2,1)
+  X4=rbeta(100,5,1)
+  mletheta1=-n/sum(log(X1))
+  mletheta2=-n/sum(log(X2))
+  mletheta3=-n/sum(log(X3))
+  mletheta4=-n/sum(log(X4))
+  fisher1=append(fisher1,1/mletheta1^2)
+  fisher2=append(fisher2,1/mletheta2^2)
+  fisher3=append(fisher3,1/mletheta3^2)
+  fisher4=append(fisher4,1/mletheta4^2)
+}
+fishermean1=mean(fisher1)
+fishermean2=mean(fisher2)
+fishermean3=mean(fisher3)
+fishermean4=mean(fisher4)
+Y1=c()
+Y2=c()
+Y3=c()
+Y4=c()
+for (i in 1:10000){
+  X1=rbeta(100,0.5,1)
+  X2=rbeta(100,1,1)
+  X3=rbeta(100,2,1)
+  X4=rbeta(100,5,1)
+  mletheta1=-n/sum(log(X1))
+  mletheta2=-n/sum(log(X2))
+  mletheta3=-n/sum(log(X3))
+  mletheta4=-n/sum(log(X4))
+  y1=sqrt(n*fishermean1)*(mletheta1-theta)
+  y2=sqrt(n*fishermean2)*(mletheta2-theta)
+  y3=sqrt(n*fishermean3)*(mletheta3-theta)
+  y4=sqrt(n*fishermean4)*(mletheta4-theta)
+  Y1=append(Y1,y1)
+  Y2=append(Y2,y2)
+  Y3=append(Y3,y3)
+  Y4=append(Y4,y4)
+}
+l=layout(matrix(c(1,2,3,4), nrow = 2, ncol = 2, byrow = TRUE))
+hist(Y1)
+qqnorm(Y1)
+qqline(Y1, col = "steelblue", lwd = 1)
+hist(Y2)
+qqnorm(Y2)
+qqline(Y2, col = "steelblue", lwd = 1)
+
+l=layout(matrix(c(1,2,3,4), nrow = 2, ncol = 2, byrow = TRUE))
+hist(Y3)
+qqnorm(Y3)
+qqline(Y3, col = "steelblue", lwd = 1)
+hist(Y4)
+qqnorm(Y4)
+qqline(Y4, col = "steelblue", lwd = 1)
+```
+
+Dla n=50 wykresy kwantylowo-kwantylowe bardziej przypominają linię prostą niż w przypadku n=20, ale mniej niż w przypadku n=100, co potwierdza, że rozkład zmiennej losowej Y zbiega do rozkładu normalnego.
+
+## Zadanie 5 n=20
+
+### a)
+
+```{r,echo=FALSE}
+df <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("theta1", "theta2", "theta3","theta4")
+colnames(df) <- x
+
+for (i in 1:10000){
+  X=rlaplace(20,1,1)
+  vec=oblicz_estymatory(X,20)
+  df[nrow(df)+1,] <- vec
+}
+
+df=wykresy(df)
+
+y=oblicz_statystyki2(df,1)
+y
+```
+
+### b)
+
+```{r,echo=FALSE}
+df <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("theta1", "theta2", "theta3","theta4")
+colnames(df) <- x
+
+for (i in 1:10000){
+  X=rlaplace(20,4,1)
+  vec=oblicz_estymatory(X,20)
+  df[nrow(df)+1,] <- vec
+}
+
+df=wykresy(df)
+
+y=oblicz_statystyki2(df,4)
+y
+```
+
+### c)
+
+```{r,echo=FALSE}
+df <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("theta1", "theta2", "theta3","theta4")
+colnames(df) <- x
+
+for (i in 1:10000){
+  X=rlaplace(20,1,2)
+  vec=oblicz_estymatory(X,20)
+  df[nrow(df)+1,] <- vec
+}
+
+df=wykresy(df)
+
+y=oblicz_statystyki2(df,1)
+y
+```
+
+## zadanie 5 n=100
+
+### a)
+
+```{r,echo=FALSE}
+df <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("theta1", "theta2", "theta3","theta4")
+colnames(df) <- x
+
+for (i in 1:10000){
+  X=rlaplace(100,1,1)
+  vec=oblicz_estymatory(X,100)
+  df[nrow(df)+1,] <- vec
+}
+
+df=wykresy(df)
+
+y=oblicz_statystyki2(df,1)
+y
+```
+
+### b)
+
+```{r,echo=FALSE}
+df <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("theta1", "theta2", "theta3","theta4")
+colnames(df) <- x
+
+for (i in 1:10000){
+  X=rlaplace(100,4,1)
+  vec=oblicz_estymatory(X,100)
+  df[nrow(df)+1,] <- vec
+}
+
+df=wykresy(df)
+
+y=oblicz_statystyki2(df,4)
+y
+```
+
+### c)
+
+```{r,echo=FALSE}
+library(VGAM)
+df <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("theta1", "theta2", "theta3","theta4")
+colnames(df) <- x
+
+for (i in 1:10000){
+  X=rlaplace(100,1,2)
+  vec=oblicz_estymatory(X,100)
+  df[nrow(df)+1,] <- vec
+}
+
+df=wykresy(df)
+
+y=oblicz_statystyki2(df,1)
+y
+```
+
+Dla n=20 i n=100 najlepszym estymatorem jest mediana, a czwarty estymator zupełnie odstaje od reszty. W tym zadaniu również prawdziwa jest obserwacja, że wraz ze wzrostem n następuje spadek MSE, var i biasu.
+
+# Rachunki
+
+Pokażemy, że mle z rozkładu dwumianowego o parametrach (n,p) jest równe $\frac{\bar{X}}{n}$.
+\begin{align}
+l(p)&=\sum_{k=1}^{n} log f(k_i,p) = log \sum_{k=1}^{n} (\binom{n}{k}p^{k}(1-p)^{n-k})= \sum_{k=1}^{n}(log\binom{n}{k}+klogp+(n-k)log(1-p))
+\end{align}
+\begin{align}
+l'(p)&=\sum_{k=1}^{n}(\frac{k}{p}-\frac{n-k}{1-p})
+\end{align}
+\begin{align}
+l'(p)=0 \iff \sum_{k=1}^{n} (k-pn)=0 \iff p = \frac{\sum_{k=1}^{n}}{n^{2}}
+\end{align}
+\begin{align}
+l''(p)=\sum_{k=1}^{n} (\frac{-k}{p^{2}}-\frac{n-k}{(1-p)^{2}}) = \sum_{k=1}^{n} (\frac{-k+2kp-np^{2}}{(1-p)^{2}p^{2}}) < 0 \text { dla miejsca zerowego } l'(p))
+\end{align}
+
+Pokażemy, że mle rozkładu poissona z parametrem $\lambda$ jest równy $\bar{X}$
+\begin{align}
+l(\lambda)=\sum_{k=1}^{n} log \frac{\lambda^{k}e^{-\lambda}}{k!}=\sum_{k=1}^{n}(klog\lambda - \lambda-logk!)
+\end{align}
+\begin{align}
+l'(\lambda)=\sum_{k=1}^{n}(\frac{k}{\lambda}-1)
+\end{align}
+\begin{align}
+l'(\lambda)=0 \iff \lambda=\frac{\sum_{k=1}^{n} k}{n}
+\end{align}
+\begin{align}
+l''(\lambda)=\frac{\sum_{k=1}^{n} k}{\lambda^{2}} < 0
+\end{align}
+
+Pokażemy, że mle rozkładu beta z parametrami $\theta$ i 1 jest równy $\frac{-n}{\sum_{k=1}^{n} logx}$
+\begin{align}
+f(x)=\theta x^{\theta-1}
+\end{align}
+\begin{align}
+l(\theta)=\sum_{k=1}^{n} log\theta x^{\theta-1}=\sum_{k=1}^{n}(log\theta+(\theta-1)logx)
+\end{align}
+\begin{align}
+l'(\theta)=\sum_{k=1}^{n} (\frac{1}{\theta}+logx)
+\end{align}
+\begin{align}
+l'(\lambda)=0 \iff \theta=\frac{-n}{\sum_{k=1}^{n} logx}
+\end{align}
+\begin{align}
+l''(\theta)=\frac{-n}{\theta^{2}}<0
+\end{align}
+
+
+

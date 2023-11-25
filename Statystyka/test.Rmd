@@ -1,0 +1,11 @@
+---
+title: "Untitled"
+author: "Katarzyna Stasińska"
+date: "2023-11-05"
+output: pdf_document
+---
+
+
+\begin{align}
+l''(p)=\sum_{k=1}^{n} (\frac{-k}{p^{2}}-\frac{n-k}{(1-p)^{2}} = \sum_{k=1}^{n} (\frac{-k+2kp-np^{2}}{(1-p)^{2}p^{2}}) < 0 \text { dla miejsca zerowego } l'(p))
+\end{align}

@@ -1,0 +1,162 @@
+---
+title: "Sprawozdanie 3 Statystyka"
+author: "Katarzyna Stasińska"
+date: "2023-11-06"
+output: pdf_document
+---
+
+# Zadanie 1 
+
+NOTATKI BRUDNOPIS
+
+# Zadanie 2
+
+### Wyniki eksperymentu a)
+
+```{r setup, echo=FALSE}
+number=300
+
+library(plotrix)
+z=qnorm(0.975,0,1)
+f=function(X,mi,sd,n){
+  flaga=0
+  l=mean(X)-z*sd/(n)^(0.5)
+  r=mean(X)+z*sd/(n)^(0.5)
+  dlugosc=r-l
+  if (mi>l && mi<r){flaga=1}
+  return(c(dlugosc,flaga,l,r)) 
+}
+
+df1 <- data.frame(matrix(ncol = 4, nrow = 0))
+df2 <- data.frame(matrix(ncol = 4, nrow = 0))
+df3 <- data.frame(matrix(ncol = 4, nrow = 0))
+
+x <- c("dlugosc","zawiera się","lewy koniec","prawy koniec")
+colnames(df1) <- x
+colnames(df2) <- x
+colnames(df3) <- x
+
+for (i in 1:10000){
+  X1=rnorm(50,0,1)
+  X2=rnorm(50,0,2)
+  X3=rnorm(50,0,3)
+  df1[nrow(df1)+1,] <- f(X1,0,1,50)
+  df2[nrow(df2)+1,] <- f(X2,0,2,50)
+  df3[nrow(df3)+1,] <- f(X3,0,3,50)
+}
+print(paste("(i): ","średnia dlugosc: " ,round(mean(df1$dlugosc),4), "prawdopodobieństwo pokrycia: ",sum(df1$`zawiera się`)/10000))
+print(paste("(ii): ","średnia dlugosc: " ,round(mean(df2$dlugosc),4), "prawdopodobieństwo pokrycia: ",sum(df2$`zawiera się`)/10000))
+print(paste("(iii): ","średnia dlugosc: " ,round(mean(df3$dlugosc),4), "prawdopodobieństwo pokrycia: ",sum(df3$`zawiera się`)/10000))
+plotCI(x=1:number,y=rep(0,number),ui=df1$`prawy koniec`,li=df1$`lewy koniec`,xlab=paste(number,'  przedziałów ufności'), ylab='',main='(i)')
+plotCI(x=1:number,y=rep(0,number),ui=df2$`prawy koniec`,li=df2$`lewy koniec`,xlab=paste(number,'  przedziałów ufności'), ylab='',main='(ii)')
+plotCI(x=1:number,y=rep(0,number),ui=df3$`prawy koniec`,li=df3$`lewy koniec`,xlab=paste(number,'  przedziałów ufności'), ylab='',main='(iii)')
+```
+
+### wyniki eksperymentu b)
+
+```{r, echo=FALSE}
+df1 <- data.frame(matrix(ncol = 4, nrow = 0))
+df2 <- data.frame(matrix(ncol = 4, nrow = 0))
+df3 <- data.frame(matrix(ncol = 4, nrow = 0))
+
+x <- c("dlugosc","zawiera się","lewy koniec","prawy koniec")
+colnames(df1) <- x
+colnames(df2) <- x
+colnames(df3) <- x
+
+for (i in 1:10000){
+  X1=rlogis(50,0,1)
+  X2=rlogis(50,0,2)
+  X3=rlogis(50,0,3)
+  df1[nrow(df1)+1,] <- f(X1,0,1^2*pi^2/3,50)
+  df2[nrow(df2)+1,] <- f(X2,0,2^2*pi^2/3,50)
+  df3[nrow(df3)+1,] <- f(X3,0,3^2*pi^2/3,50)
+}
+print(paste("(i): ","średnia dlugosc: " ,round(mean(df1$dlugosc),4), "prawdopodobieństwo pokrycia: ",sum(df1$`zawiera się`)/10000))
+print(paste("(ii): ","średnia dlugosc: " ,round(mean(df2$dlugosc),4), "prawdopodobieństwo pokrycia: ",sum(df2$`zawiera się`)/10000))
+print(paste("(iii): ","średnia dlugosc: " ,round(mean(df3$dlugosc),4), "prawdopodobieństwo pokrycia: ",sum(df3$`zawiera się`)/10000))
+plotCI(x=1:number,y=rep(0,number),ui=df1$`prawy koniec`,li=df1$`lewy koniec`,xlab=paste(number,'  przedziałów ufności'), ylab='',main='(i)')
+plotCI(x=1:number,y=rep(0,number),ui=df2$`prawy koniec`,li=df2$`lewy koniec`,xlab=paste(number,'  przedziałów ufności'), ylab='',main='(ii)')
+plotCI(x=1:number,y=rep(0,number),ui=df3$`prawy koniec`,li=df3$`lewy koniec`,xlab=paste(number,'  przedziałów ufności'), ylab='',main='(iii)')
+```
+
+### wyniki eksperymentu c)
+
+```{r, echo=FALSE}
+df1 <- data.frame(matrix(ncol = 4, nrow = 0))
+df2 <- data.frame(matrix(ncol = 4, nrow = 0))
+df3 <- data.frame(matrix(ncol = 4, nrow = 0))
+
+x <- c("dlugosc","zawiera się","lewy koniec","prawy koniec")
+colnames(df1) <- x
+colnames(df2) <- x
+colnames(df3) <- x
+
+n=50
+X1=rcauchy(50,0,1)
+X2=rcauchy(50,0,2)
+X3=rcauchy(50,0,3)
+sd1=(sum((X1-mean(X1))^2)/(n-1))^(1/2)
+sd2=(sum((X2-mean(X2))^2)/(n-1))^(1/2)
+sd3=(sum((X3-mean(X3))^2)/(n-1))^(1/2)
+for (i in 1:10000){
+  X1=rcauchy(50,0,1)
+  X2=rcauchy(50,0,2)
+  X3=rcauchy(50,0,3)
+  a=((sum(X1-mean(X1)))^2/(n-1))^(1/2)
+  df1[nrow(df1)+1,] <- f(X1,0,sd1,50)
+  df2[nrow(df2)+1,] <- f(X2,0,sd2,50)
+  df3[nrow(df3)+1,] <- f(X3,0,sd3,50)
+}
+print(paste("(i): ","średnia dlugosc: " ,round(mean(df1$dlugosc),4), "prawdopodobieństwo pokrycia: ",sum(df1$`zawiera się`)/10000))
+print(paste("(ii): ","średnia dlugosc: " ,round(mean(df2$dlugosc),4), "prawdopodobieństwo pokrycia: ",sum(df2$`zawiera się`)/10000))
+print(paste("(iii): ","średnia dlugosc: " ,round(mean(df3$dlugosc),4), "prawdopodobieństwo pokrycia: ",sum(df3$`zawiera się`)/10000))
+plotCI(x=1:number,y=rep(0,number),ui=df1$`prawy koniec`,li=df1$`lewy koniec`,xlab=paste(number,'  przedziałów ufności'), ylab='',main='(i)')
+plotCI(x=1:number,y=rep(0,number),ui=df2$`prawy koniec`,li=df2$`lewy koniec`,xlab=paste(number,'  przedziałów ufności'), ylab='',main='(ii)')
+plotCI(x=1:number,y=rep(0,number),ui=df3$`prawy koniec`,li=df3$`lewy koniec`,xlab=paste(number,'  przedziałów ufności'), ylab='',main='(iii)')
+```
+
+Wykresy przedstawiają 400 pierwszych wyliczonych przedziałów ufności. Długość przedziałów się nie zmienia. Ich średnia jest równa długośći każdego z przedziałów.
+
+# Zadanie 4
+
+### Wyniki eksperymentu a)
+
+```{r,echo=FALSE}
+x1=qchisq(0.975,50)
+x2=qchisq(0.025,50)
+
+f2=function(X,mi,sd,n){
+  flaga=0
+  s2=1/n*sum((X-mi)^2)
+  l=n*s2/x1
+  r=n*s2/x2
+  dlugosc=r-l
+  if (sd^2>l && sd^2<r){flaga=1}
+  return(c(dlugosc,flaga,l,r)) 
+}
+
+df1 <- data.frame(matrix(ncol = 4, nrow = 0))
+df2 <- data.frame(matrix(ncol = 4, nrow = 0))
+df3 <- data.frame(matrix(ncol = 4, nrow = 0))
+
+x <- c("dlugosc","zawiera się","lewy koniec","prawy koniec")
+colnames(df1) <- x
+colnames(df2) <- x
+colnames(df3) <- x
+
+for (i in 1:10000){
+  X1=rnorm(50,0,1)
+  X2=rnorm(50,0,2)
+  X3=rnorm(50,0,3)
+  df1[nrow(df1)+1,] <- f2(X1,0,1,50)
+  df2[nrow(df2)+1,] <- f2(X2,0,2,50)
+  df3[nrow(df3)+1,] <- f2(X3,0,3,50)
+}
+print(paste("(i): ","średnia dlugosc: " ,round(mean(df1$dlugosc),4), "prawdopodobieństwo pokrycia: ",sum(df1$`zawiera się`)/10000))
+print(paste("(ii): ","średnia dlugosc: " ,round(mean(df2$dlugosc),4), "prawdopodobieństwo pokrycia: ",sum(df2$`zawiera się`)/10000))
+print(paste("(iii): ","średnia dlugosc: " ,round(mean(df3$dlugosc),4), "prawdopodobieństwo pokrycia: ",sum(df3$`zawiera się`)/10000))
+plotCI(x=1:number,y=rep(1,number),ui=df1$`prawy koniec`,li=df1$`lewy koniec`,xlab=paste(number,'  przedziałów ufności'), ylab='',main='(i)')
+plotCI(x=1:number,y=rep(4,number),ui=df2$`prawy koniec`,li=df2$`lewy koniec`,xlab=paste(number,'  przedziałów ufności'), ylab='',main='(ii)')
+plotCI(x=1:number,y=rep(9,number),ui=df3$`prawy koniec`,li=df3$`lewy koniec`,xlab=paste(number,'  przedziałów ufności'), ylab='',main='(iii)')
+```
