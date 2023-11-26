@@ -1,0 +1,951 @@
+---
+title: "Sprawozdanie 3 Statystyka"
+author: "Katarzyna Stasińska"
+date: "2023-11"
+output: pdf_document
+---
+
+```{r,echo=FALSE}
+set.seed(123)
+number=100
+z=qnorm(0.975,0,1)
+
+ramkidanych=function(){
+  df<- data.frame(matrix(ncol = 4, nrow = 0))
+  x <- c("dlugosc","zawiera się","lewy koniec","prawy koniec")
+  colnames(df) <- x
+  return(df)
+}
+
+zawieranie=function(df,int){
+  if(int==1) {print(paste("(i): ","średnia dlugosc: " ,round(mean(df$dlugosc),4), "prawdopodobieństwo pokrycia: ",sum(df$`zawiera się`)/10000))}
+  if(int==2) {print(paste("(ii): ","średnia dlugosc: " ,round(mean(df$dlugosc),4), "prawdopodobieństwo pokrycia: ",sum(df$`zawiera się`)/10000))}
+  if(int==3) {print(paste("(iii): ","średnia dlugosc: " ,round(mean(df$dlugosc),4), "prawdopodobieństwo pokrycia: ",sum(df$`zawiera się`)/10000))}
+}
+
+wykresy=function(nazwa,value,df){
+  l=min(df$`lewy koniec`[1:number])
+  r=max(df$`prawy koniec`[1:number])
+  l=l-abs(0.1*l)
+  r=r+abs(0.1*r)
+  x=max(abs(value-l),abs(r-value))
+  plot(c(value-x,value+x),c(1,number), type="n", xlab=nazwa, ylab=paste(number," przedziałów ufności"))
+  segments(df$`lewy koniec`,1:number,df$`prawy koniec`,1:number, col="blue", lwd=1)
+  abline(v=value,col="red",lwd=1)
+}
+
+f2=function(X,mi,sd,n){
+  flaga=0
+  l=mean(X)-z*sd/(n)^(0.5)
+  r=mean(X)+z*sd/(n)^(0.5)
+  dlugosc=r-l
+  if (mi>l && mi<r){flaga=1}
+  return(c(dlugosc,flaga,l,r)) 
+}
+
+f4=function(X,mi,sd,n){
+  flaga=0
+  sd=(sum((X-mean(X))^2)/(n-1))^(1/2) ## nieznana wariancja
+  l=mean(X)-z*sd/(n)^(0.5)
+  r=mean(X)+z*sd/(n)^(0.5)
+  dlugosc=r-l
+  if (mi>l && mi<r){flaga=1}
+  return(c(dlugosc,flaga,l,r)) 
+}
+
+f6=function(X,mi,sd,n){
+  x1=qchisq(0.975,n)
+  x2=qchisq(0.025,n)
+  flaga=0
+  s2=1/n*sum((X-mi)^2)
+  l=n*s2/x1
+  r=n*s2/x2
+  dlugosc=r-l
+  if (sd^2>l && sd^2<r){flaga=1}
+  return(c(dlugosc,flaga,l,r)) 
+}
+
+f8=function(X,mi,sd,n){
+  x1=qchisq(0.975,n-1)
+  x2=qchisq(0.025,n-1)
+  flaga=0
+  s2=1/n*sum((X-mean(X))^2)
+  l=n*s2/x1
+  r=n*s2/x2
+  dlugosc=r-l
+  if (sd^2>l && sd^2<r){flaga=1}
+  return(c(dlugosc,flaga,l,r)) 
+}
+
+f10=function(X,p,n){
+  flaga=0
+  pval=sum(X>0)/n
+  var=sqrt(pval*(1-pval)/n)
+  l=pval-z*var
+  r=pval+z*var
+  dlugosc=r-l
+  if (p>l && p<r){flaga=1}
+  return(c(dlugosc,flaga,l,r)) 
+}
+
+eksperyment=function(rozklad,funkcja,p11,p12,p21,p22,p31,p32,mi1,mi2,mi3,sd1,sd2,sd3,n,flaga){
+  df1 <- ramkidanych()
+  df2 <- ramkidanych()
+  df3 <- ramkidanych()
+  
+  for (i in 1:10000){
+    if(p12 == -100){
+      X1=rozklad(n,p11)
+      X2=rozklad(n,p21)
+      X3=rozklad(n,p31)
+    }else{
+      X1=rozklad(n,p11,p12)
+      X2=rozklad(n,p21,p22)
+      X3=rozklad(n,p31,p32)
+    }
+    df1[nrow(df1)+1,] <- funkcja(X1,mi1,sd1,n)
+    df2[nrow(df2)+1,] <- funkcja(X2,mi2,sd2,n)
+    df3[nrow(df3)+1,] <- funkcja(X3,mi3,sd3,n)
+  }
+  
+  zawieranie(df1,1)
+  zawieranie(df2,2)
+  zawieranie(df3,3)
+  
+  if(flaga==0){
+    par(mfrow=c(1, 3))
+    wykresy('średnia',mi1,df1)
+    wykresy('średnia',mi2,df2)
+    wykresy('średnia',mi3,df3)
+  }
+  if(flaga==1){
+    par(mfrow=c(1, 3))
+    wykresy('wariancja',sd1^2,df1)
+    wykresy('wariancja',sd2^2,df2)
+    wykresy('wariancja',sd3^2,df3)
+  }
+}
+
+```
+
+# Zadanie 1 
+
+Rozważamy $X$ z rozkładu normalnego, zatem wiemy że $z=\frac{\bar{X}-\mu}{\frac{\sigma}{\sqrt{n}}} \sim N(0,1)$. Rozważamy przedział ufności na poziomie ufności $1-\alpha$, zatem wychodzimy z poniższej równości, gdzie $z_{\frac{\alpha}{2}} = - z_{1- \frac{\alpha}{2}}$, bo z $z_{1- \frac{\alpha}{2}}$ to kwantyl rzędu $1-\frac{\alpha}{2}$ ze standardowego rozkładu normalnego.
+
+\begin{align}
+P\left(z_{\frac{\alpha}{2}} \le z \le z_{1- \frac{\alpha}{2}}\right) = 1 - \alpha
+\end{align}
+
+\begin{align}
+P\left(z_{\frac{\alpha}{2}} \le \frac{\bar{X}-\mu}{\frac{\sigma}{\sqrt{n}}} \le z_{1- \frac{\alpha}{2}}\right) = 1 - \alpha
+\end{align}
+
+\begin{align}
+P\left(z_{\frac{\alpha}{2}}\frac{\sigma}{\sqrt{n}} \le \bar{X}-\mu \le z_{1- \frac{\alpha}{2}}\frac{\sigma}{\sqrt{n}} \right) = 1 - \alpha
+\end{align}
+
+\begin{align}
+P\left(z_{\frac{\alpha}{2}}\frac{\sigma}{\sqrt{n}}-\bar{X} \le -\mu \le z_{1- \frac{\alpha}{2}}\frac{\sigma}{\sqrt{n}}- \bar{X} \right) = 1 - \alpha
+\end{align}
+
+\begin{align}
+P\left( \bar{X} - z_{1-\frac{\alpha}{2}} \frac{\sigma}{\sqrt{n}} \le \mu \le \bar{X} + z_{1-\frac{\alpha}{2}} \frac{\sigma}{\sqrt{n}} \right) = 1 - \alpha
+\end{align}
+
+\begin{align}
+\text{Zatem poszukiwany przedział ufności jest postaci} \quad \left[\bar{X} - z_{1-\frac{\alpha}{2}} \frac{\sigma}{\sqrt{n}},\bar{X} + z_{1-\frac{\alpha}{2}} \frac{\sigma}{\sqrt{n}}\right]
+\end{align}
+
+gdzie $\bar{X}$ to średnia próbkowa, $\sigma^{2}$ to wariancja rozkładu, a $n$ to rozmiar próby.
+
+# Zadanie 2
+
+### wyniki eksperymentu a)
+
+```{r, echo=FALSE}
+eksperyment(rnorm,f2,0,1,0,2,0,3,0,0,0,1,2,3,50,0)
+```
+
+### wyniki eksperymentu b)
+
+```{r, echo=FALSE}
+eksperyment(rlogis,f2,0,1,0,2,0,3,0,0,0,sqrt(1^2*pi^2/3),sqrt(2^2*pi^2/3),sqrt(3^2*pi^2/3),50,0)
+```
+
+### wyniki eksperymentu c)
+
+```{r, echo=FALSE}
+n=50
+X1=rcauchy(50,0,1)
+X2=rcauchy(50,0,2)
+X3=rcauchy(50,0,3)
+sd1=(sum((X1-mean(X1))^2)/(n-1))^(1/2)
+sd2=(sum((X2-mean(X2))^2)/(n-1))^(1/2)
+sd3=(sum((X3-mean(X3))^2)/(n-1))^(1/2)
+eksperyment(rcauchy,f2,0,1,0,2,0,3,0,0,0,sd1,sd2,sd3,50,0)
+```
+
+### wyniki eksperymentu d)
+
+```{r, echo=FALSE}
+eksperyment(rexp,f2,1,-100,1/2,-100,1/3,-100,1,2,3,1,2,3,50,0)
+```
+
+### wyniki eksperymentu e)
+
+```{r, echo=FALSE}
+eksperyment(rchisq,f2,1,-100,2,-100,3,-100,1,2,3,2^(1/2),4^(1/2),6^(1/2),50,0)
+```
+
+Wykresy przedstawiają 100 pierwszych wyliczonych przedziałów ufności. Długość przedziałów się nie zmienia. Ich średnia jest równa długości każdego z przedziałów. Prawdopodobieństwo pokrycia nieznanej średniej przez przedział ufności jest bliskie 95%, jedynie w przypadku rozkładu Cauchy'ego wyniki są dalekie od 95%.
+
+# Zadanie 3
+
+W przypadku gdy $\sigma^{2}$ jest nieznana możemy postępować analogicznie jak w zadaniu 1, a za wariancję podstawić wariancję próbkową wyrażoną wzorem $s^{2}=\frac{\sum_{i=1}^{n}(X_i - \bar{X})^2}{n-1}$.
+
+# Zadanie 4
+
+### wyniki eksperymentu a)
+
+```{r, echo=FALSE}
+eksperyment(rnorm,f4,0,1,0,2,0,3,0,0,0,1,2,3,50,0)
+```
+
+### wyniki eksperymentu b)
+
+```{r, echo=FALSE}
+eksperyment(rlogis,f4,0,1,0,2,0,3,0,0,0,sqrt(1^2*pi^2/3),sqrt(2^2*pi^2/3),sqrt(3^2*pi^2/3),50,0)
+```
+
+### wyniki eksperymentu c)
+
+```{r, echo=FALSE}
+n=50
+X1=rcauchy(50,0,1)
+X2=rcauchy(50,0,2)
+X3=rcauchy(50,0,3)
+sd1=(sum((X1-mean(X1))^2)/(n-1))^(1/2)
+sd2=(sum((X2-mean(X2))^2)/(n-1))^(1/2)
+sd3=(sum((X3-mean(X3))^2)/(n-1))^(1/2)
+eksperyment(rcauchy,f4,0,1,0,2,0,3,0,0,0,sd1,sd2,sd3,50,0)
+```
+
+### wyniki eksperymentu d)
+
+```{r, echo=FALSE}
+eksperyment(rexp,f4,1,-100,1/2,-100,1/3,-100,1,2,3,1,2,3,50,0)
+```
+
+### wyniki eksperymentu e)
+
+```{r, echo=FALSE}
+eksperyment(rchisq,f4,1,-100,2,-100,3,-100,1,2,3,2^(1/2),4^(1/2),6^(1/2),50,0)
+```
+
+
+Wykresy przedstawiają 100 pierwszych wyliczonych przedziałów ufności. Podobnie jak w zadaniu 2, długość przedziałów się nie zmienia, bo zależy od stałych parametrów. Zatem ich średnia jest równa długości każdego z przedziałów. Prawdopodobieństwo pokrycia nieznanej średniej przez przedział ufności jest bliskie 95%, co ciekawe również w przypadku rozkładu Cauchy'ego.
+
+# Zadanie 5
+
+Rozważamy $X$ z rozkładu normalnego, zatem  $\frac{X_{i}-\mu}{\sigma} \sim N(0,1)$. A $\sum (\frac{X_{i}-\mu}{\sigma})^{2} \sim \chi^{2}(n)$. Ustalając, że $s^{2}=\frac{\sum(X_{i}-\mu)^{2}}{n}$, mamy
+
+
+\begin{align}
+\sum (\frac{X_{i}-\mu}{\sigma})^{2} = \frac{n}{\sigma^{2}}s^{2} \sim \chi^{2}(n)
+\end{align}
+
+\begin{align}
+\text{Zatem} \quad P\left(\chi^{2}_{\frac{\alpha}{2}} \le  \frac{n}{\sigma^{2}}s^{2} \le \chi^{2}_{1- \frac{\alpha}{2}}\right) = 1 - \alpha
+\end{align}
+
+\begin{align}
+P\left(\frac{\chi^{2}_{\frac{\alpha}{2}}}{ns^{2}} \le  \frac{1}{\sigma^{2}} \le \frac{\chi^{2}_{1- \frac{\alpha}{2}}}{ns^{2}}\right) = 1 - \alpha
+\end{align}
+
+\begin{align}
+P\left(\frac{ns^{2}}{\chi^{2}_{\frac{\alpha}{2}}} \ge \sigma^{2} \ge \frac{ns^{2}}{\chi^{2}_{1- \frac{\alpha}{2}}}\right) = 1 - \alpha
+\end{align}
+
+\begin{align}
+\text{Zatem poszukiwany przedział ufności jest postaci} \quad \left[\frac{ns^{2}}{\chi^{2}_{1- \frac{\alpha}{2}}},\frac{ns^{2}}{\chi^{2}_{\frac{\alpha}{2}}}\right]
+\end{align}
+
+gdzie $\chi^{2}_{\frac{\alpha}{2}}$ to kwantyl rzędu $\frac{\alpha}{2}$ z rozkładu $\chi^{2}$ z $n$ stopniami swobody, gdzie $n$ to rozmiar próby.
+
+# Zadanie 6
+
+### wyniki eksperymentu a)
+
+```{r, echo=FALSE}
+eksperyment(rnorm,f6,0,1,0,2,0,3,0,0,0,1,2,3,50,1)
+```
+
+### wyniki eksperymentu b)
+
+```{r, echo=FALSE}
+eksperyment(rlogis,f6,0,1,0,2,0,3,0,0,0,sqrt(1^2*pi^2/3),sqrt(2^2*pi^2/3),sqrt(3^2*pi^2/3),50,1)
+```
+
+### wyniki eksperymentu c)
+
+```{r, echo=FALSE}
+n=50
+X1=rcauchy(50,0,1)
+X2=rcauchy(50,0,2)
+X3=rcauchy(50,0,3)
+sd1=(sum((X1-mean(X1))^2)/(n-1))^(1/2)
+sd2=(sum((X2-mean(X2))^2)/(n-1))^(1/2)
+sd3=(sum((X3-mean(X3))^2)/(n-1))^(1/2)
+eksperyment(rcauchy,f6,0,1,0,2,0,3,0,0,0,sd1,sd2,sd3,50,1)
+```
+
+### wyniki eksperymentu d)
+
+```{r, echo=FALSE}
+eksperyment(rexp,f6,1,-100,1/2,-100,1/3,-100,1,2,3,1,2,3,50,1)
+```
+
+### wyniki eksperymentu e)
+
+```{r, echo=FALSE}
+eksperyment(rchisq,f6,1,-100,2,-100,3,-100,1,2,3,2^(1/2),4^(1/2),6^(1/2),50,1)
+```
+
+W przypadku szukania poziomu ufności wariancji przy znanej średniej, jedynie eksperyment z rozkładem normalnym zwraca wyniki bliskie 95%.
+
+# zadanie 7
+
+W przypadku gdy $\mu$ jest nieznane możemy postępować analogicznie jak w zadaniu 5, a za średnią podstawić średnią próbkową $\bar{X}$ przy liczeniu $s^{2}$. Zmienia się również liczba stopni swobody przy wyliczaniu kwantylu, teraz  $\chi^{2}_{\frac{\alpha}{2}}$ to kwantyl rzędu $\frac{\alpha}{2}$ z rozkładu $\chi^{2}$ z $n-1$ stopniami swobody.
+
+# Zadanie 8
+
+### wyniki eksperymentu a)
+
+```{r, echo=FALSE}
+eksperyment(rnorm,f8,0,1,0,2,0,3,0,0,0,1,2,3,50,1)
+```
+
+### wyniki eksperymentu b)
+
+```{r, echo=FALSE}
+eksperyment(rlogis,f8,0,1,0,2,0,3,0,0,0,sqrt(1^2*pi^2/3),sqrt(2^2*pi^2/3),sqrt(3^2*pi^2/3),50,1)
+```
+
+### wyniki eksperymentu c)
+
+```{r, echo=FALSE}
+n=50
+X1=rcauchy(50,0,1)
+X2=rcauchy(50,0,2)
+X3=rcauchy(50,0,3)
+sd1=(sum((X1-mean(X1))^2)/(n-1))^(1/2)
+sd2=(sum((X2-mean(X2))^2)/(n-1))^(1/2)
+sd3=(sum((X3-mean(X3))^2)/(n-1))^(1/2)
+eksperyment(rcauchy,f8,0,1,0,2,0,3,0,0,0,sd1,sd2,sd3,50,1)
+```
+
+### wyniki eksperymentu d)
+
+```{r, echo=FALSE}
+eksperyment(rexp,f8,1,-100,1/2,-100,1/3,-100,1,2,3,1,2,3,50,1)
+```
+
+### wyniki eksperymentu e)
+
+```{r, echo=FALSE}
+eksperyment(rchisq,f8,1,-100,2,-100,3,-100,1,2,3,2^(1/2),4^(1/2),6^(1/2),50,1)
+```
+
+Wyniki są bardzo podobne do tych z zadania 6. Prawdopodobieństwo pokrycia jest bliskie 95% jedynie dla rozkładu normalnego.
+
+# Zadanie 9
+
+Ustalmy $P(X=1)=p$ - sukces i $P(X=0)=1-p$ - porażka. Niech $\hat{p}=\bar{X}$. Wtedy $\frac{\hat{p}-E[\hat{p}]}{Var(\hat{p})} \sim N(0,1)$ na mocy Centralnego Twierdzenia Granicznego. Zauważmy, że $E[\hat{p}]=p$ oraz $Var(\hat{p})=\frac{p(1-p)}{n}$. Biorąc estymator wariancji mamy ($z_{\frac{\alpha}{2}} = - z_{1- \frac{\alpha}{2}}$, bo z $z_{1- \frac{\alpha}{2}}$ to kwantyl rzędu $1-\frac{\alpha}{2}$ ze standardowego rozkładu normalnego):
+
+\begin{align}
+P\left(z_{\frac{\alpha}{2}} \le \frac{\hat{p}-p}{\sqrt{\frac{\hat{p}(1-\hat{p})}{n}}} \le z_{1- \frac{\alpha}{2}}\right) = 1 - \alpha
+\end{align}
+
+\begin{align}
+P\left(z_{\frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p})}{n}} \le \hat{p}-p \le z_{1- \frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p})}{n}}\right) = 1 - \alpha
+\end{align}
+
+\begin{align}
+P\left(-\hat{p}+z_{\frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p})}{n}} \le -p \le -\hat{p}+z_{1- \frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p})}{n}}\right) = 1 - \alpha
+\end{align}
+
+\begin{align}
+P\left(\hat{p}-z_{1- \frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p})}{n}} \le p \le \hat{p}+z_{1-\frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p})}{n}}\right) = 1 - \alpha
+\end{align}
+
+
+\begin{align}
+\text{Zatem poszukiwany przedział ufności jest postaci} \quad \left[\hat{p}-z_{1- \frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p})}{n}},\hat{p}+z_{1-\frac{\alpha}{2}}\sqrt{\frac{\hat{p}(1-\hat{p})}{n}}\right]
+\end{align}
+
+# Zadanie 10
+
+### wyniki eksperymentu a)
+
+```{r,echo=FALSE}
+df1 <- ramkidanych()
+df2 <- ramkidanych()
+df3 <- ramkidanych()
+
+for (i in 1:10000){
+  X1=rnorm(50,0,1)
+  X2=rnorm(50,0,2)
+  X3=rnorm(50,0,3)
+  df1[nrow(df1)+1,] <- f10(X1,1/2,50)
+  df2[nrow(df2)+1,] <- f10(X2,1/2,50)
+  df3[nrow(df3)+1,] <- f10(X3,1/2,50)
+}
+
+a=zawieranie(df1,1)
+a=zawieranie(df2,2)
+a=zawieranie(df3,3)
+
+par(mfrow=c(1, 3))
+wykresy('p',1/2,df1)
+wykresy('p',1/2,df2)
+wykresy('p',1/2,df3)
+```
+
+### wyniki eksperymentu b)
+
+```{r,echo=FALSE}
+df1 <- ramkidanych()
+df2 <- ramkidanych()
+df3 <- ramkidanych()
+
+for (i in 1:10000){
+  X1=rlogis(50,0,1)
+  X2=rlogis(50,0,2)
+  X3=rlogis(50,0,3)
+  df1[nrow(df1)+1,] <- f10(X1,1/2,50)
+  df2[nrow(df2)+1,] <- f10(X2,1/2,50)
+  df3[nrow(df3)+1,] <- f10(X3,1/2,50)
+}
+
+a=zawieranie(df1,1)
+a=zawieranie(df2,2)
+a=zawieranie(df3,3)
+
+par(mfrow=c(1, 3))
+wykresy('p',1/2,df1)
+wykresy('p',1/2,df2)
+wykresy('p',1/2,df3)
+```
+
+### wyniki eksperymentu c)
+
+```{r,echo=FALSE}
+df1 <- ramkidanych()
+df2 <- ramkidanych()
+df3 <- ramkidanych()
+
+for (i in 1:10000){
+  X1=rcauchy(50,0,1)
+  X2=rcauchy(50,0,2)
+  X3=rcauchy(50,0,3)
+  df1[nrow(df1)+1,] <- f10(X1,1/2,50)
+  df2[nrow(df2)+1,] <- f10(X2,1/2,50)
+  df3[nrow(df3)+1,] <- f10(X3,1/2,50)
+}
+
+a=zawieranie(df1,1)
+a=zawieranie(df2,2)
+a=zawieranie(df3,3)
+
+par(mfrow=c(1, 3))
+wykresy('p',1/2,df1)
+wykresy('p',1/2,df2)
+wykresy('p',1/2,df3)
+```
+
+Wykresy przedstawiają 100 pierwszych wyliczonych przedziałów ufności. Długość przedziałów się zmienia, bo zależy od $\hat{p}=\bar{X}$, ale nieznacznie, ponieważ $\hat{p}$ to liczba $X>0$, a powyższe rozkłady są symetryczne, więc wartości $\hat{p}$ są bliskie sobie. Z tego wynika też, że średnie długości przedziałów wyznaczone dla każdego z podpunktów są prawie równe. Prawdopodobieństwo pokrycia nieznanej średniej przez przedział ufności jest bliskie 95% w każdym z przypadków.
+
+# zadanie 11
+
+## zadanie 2, $n=20$
+
+### wyniki eksperymentu a)
+
+```{r, echo=FALSE}
+eksperyment(rnorm,f2,0,1,0,2,0,3,0,0,0,1,2,3,20,0)
+```
+
+### wyniki eksperymentu b)
+
+```{r, echo=FALSE}
+eksperyment(rlogis,f2,0,1,0,2,0,3,0,0,0,sqrt(1^2*pi^2/3),sqrt(2^2*pi^2/3),sqrt(3^2*pi^2/3),20,0)
+```
+
+### wyniki eksperymentu c)
+
+```{r, echo=FALSE}
+n=20
+X1=rcauchy(n,0,1)
+X2=rcauchy(n,0,2)
+X3=rcauchy(n,0,3)
+sd1=(sum((X1-mean(X1))^2)/(n-1))^(1/2)
+sd2=(sum((X2-mean(X2))^2)/(n-1))^(1/2)
+sd3=(sum((X3-mean(X3))^2)/(n-1))^(1/2)
+eksperyment(rcauchy,f2,0,1,0,2,0,3,0,0,0,sd1,sd2,sd3,20,0)
+```
+
+### wyniki eksperymentu d)
+
+```{r, echo=FALSE}
+eksperyment(rexp,f2,1,-100,1/2,-100,1/3,-100,1,2,3,1,2,3,20,0)
+```
+
+### wyniki eksperymentu e)
+
+```{r, echo=FALSE}
+eksperyment(rchisq,f2,1,-100,2,-100,3,-100,1,2,3,2^(1/2),4^(1/2),6^(1/2),20,0)
+```
+
+## zadanie 2, $n=100$
+
+
+### wyniki eksperymentu a)
+
+```{r, echo=FALSE}
+eksperyment(rnorm,f2,0,1,0,2,0,3,0,0,0,1,2,3,100,0)
+```
+
+### wyniki eksperymentu b)
+
+```{r, echo=FALSE}
+eksperyment(rlogis,f2,0,1,0,2,0,3,0,0,0,sqrt(1^2*pi^2/3),sqrt(2^2*pi^2/3),sqrt(3^2*pi^2/3),100,0)
+```
+
+### wyniki eksperymentu c)
+
+```{r, echo=FALSE}
+n=100
+X1=rcauchy(n,0,1)
+X2=rcauchy(n,0,2)
+X3=rcauchy(n,0,3)
+sd1=(sum((X1-mean(X1))^2)/(n-1))^(1/2)
+sd2=(sum((X2-mean(X2))^2)/(n-1))^(1/2)
+sd3=(sum((X3-mean(X3))^2)/(n-1))^(1/2)
+eksperyment(rcauchy,f2,0,1,0,2,0,3,0,0,0,sd1,sd2,sd3,100,0)
+```
+
+### wyniki eksperymentu d)
+
+```{r, echo=FALSE}
+eksperyment(rexp,f2,1,-100,1/2,-100,1/3,-100,1,2,3,1,2,3,100,0)
+```
+
+### wyniki eksperymentu e)
+
+```{r, echo=FALSE}
+eksperyment(rchisq,f2,1,-100,2,-100,3,-100,1,2,3,2^(1/2),4^(1/2),6^(1/2),100,0)
+```
+
+Nie zauważam dużego wpływu rozmiaru danych na wyniki. I dla $n=20$ i dla $n=100$ wszystkie prawdopodobieństwa pokrycia są bliskie 95%, wykluczając te dotyczące rozkładu Cauchy'ego.
+
+## zadanie 4, $n=20$
+
+### wyniki eksperymentu a)
+
+```{r, echo=FALSE}
+eksperyment(rnorm,f4,0,1,0,2,0,3,0,0,0,1,2,3,20,0)
+```
+
+### wyniki eksperymentu b)
+
+```{r, echo=FALSE}
+eksperyment(rlogis,f4,0,1,0,2,0,3,0,0,0,sqrt(1^2*pi^2/3),sqrt(2^2*pi^2/3),sqrt(3^2*pi^2/3),20,0)
+```
+
+### wyniki eksperymentu c)
+
+```{r, echo=FALSE}
+n=20
+X1=rcauchy(n,0,1)
+X2=rcauchy(n,0,2)
+X3=rcauchy(n,0,3)
+sd1=(sum((X1-mean(X1))^2)/(n-1))^(1/2)
+sd2=(sum((X2-mean(X2))^2)/(n-1))^(1/2)
+sd3=(sum((X3-mean(X3))^2)/(n-1))^(1/2)
+eksperyment(rcauchy,f4,0,1,0,2,0,3,0,0,0,sd1,sd2,sd3,20,0)
+```
+
+### wyniki eksperymentu d)
+
+```{r, echo=FALSE}
+eksperyment(rexp,f4,1,-100,1/2,-100,1/3,-100,1,2,3,1,2,3,20,0)
+```
+
+### wyniki eksperymentu e)
+
+```{r, echo=FALSE}
+eksperyment(rchisq,f4,1,-100,2,-100,3,-100,1,2,3,2^(1/2),4^(1/2),6^(1/2),20,0)
+```
+
+## zadanie 4, $n=100$
+
+### wyniki eksperymentu a)
+
+```{r, echo=FALSE}
+eksperyment(rnorm,f4,0,1,0,2,0,3,0,0,0,1,2,3,100,0)
+```
+
+### wyniki eksperymentu b)
+
+```{r, echo=FALSE}
+eksperyment(rlogis,f4,0,1,0,2,0,3,0,0,0,sqrt(1^2*pi^2/3),sqrt(2^2*pi^2/3),sqrt(3^2*pi^2/3),100,0)
+```
+
+### wyniki eksperymentu c)
+
+```{r, echo=FALSE}
+n=100
+X1=rcauchy(n,0,1)
+X2=rcauchy(n,0,2)
+X3=rcauchy(n,0,3)
+sd1=(sum((X1-mean(X1))^2)/(n-1))^(1/2)
+sd2=(sum((X2-mean(X2))^2)/(n-1))^(1/2)
+sd3=(sum((X3-mean(X3))^2)/(n-1))^(1/2)
+eksperyment(rcauchy,f4,0,1,0,2,0,3,0,0,0,sd1,sd2,sd3,100,0)
+```
+
+### wyniki eksperymentu d)
+
+```{r, echo=FALSE}
+eksperyment(rexp,f4,1,-100,1/2,-100,1/3,-100,1,2,3,1,2,3,100,0)
+```
+
+### wyniki eksperymentu e)
+
+```{r, echo=FALSE}
+eksperyment(rchisq,f4,1,-100,2,-100,3,-100,1,2,3,2^(1/2),4^(1/2),6^(1/2),100,0)
+```
+
+Choć wszystkie prawdopodobieństwa pokrycia są bliskie 95%, widać niewielką różnicę w dokładności przybliżenia wraz ze wzrostem rozmiaru próbki.
+
+## zadanie 6, $n=20$
+
+### wyniki eksperymentu a)
+
+```{r, echo=FALSE}
+eksperyment(rnorm,f6,0,1,0,2,0,3,0,0,0,1,2,3,20,1)
+```
+
+### wyniki eksperymentu b)
+
+```{r, echo=FALSE}
+eksperyment(rlogis,f6,0,1,0,2,0,3,0,0,0,sqrt(1^2*pi^2/3),sqrt(2^2*pi^2/3),sqrt(3^2*pi^2/3),20,1)
+```
+
+### wyniki eksperymentu c)
+
+```{r, echo=FALSE}
+n=20
+X1=rcauchy(n,0,1)
+X2=rcauchy(n,0,2)
+X3=rcauchy(n,0,3)
+sd1=(sum((X1-mean(X1))^2)/(n-1))^(1/2)
+sd2=(sum((X2-mean(X2))^2)/(n-1))^(1/2)
+sd3=(sum((X3-mean(X3))^2)/(n-1))^(1/2)
+eksperyment(rcauchy,f6,0,1,0,2,0,3,0,0,0,sd1,sd2,sd3,20,1)
+```
+
+### wyniki eksperymentu d)
+
+```{r, echo=FALSE}
+eksperyment(rexp,f6,1,-100,1/2,-100,1/3,-100,1,2,3,1,2,3,20,1)
+```
+
+### wyniki eksperymentu e)
+
+```{r, echo=FALSE}
+eksperyment(rchisq,f6,1,-100,2,-100,3,-100,1,2,3,2^(1/2),4^(1/2),6^(1/2),20,1)
+```
+
+## zadanie 6, $n=100$
+
+### wyniki eksperymentu a)
+
+```{r, echo=FALSE}
+eksperyment(rnorm,f6,0,1,0,2,0,3,0,0,0,1,2,3,100,1)
+```
+
+### wyniki eksperymentu b)
+
+```{r, echo=FALSE}
+eksperyment(rlogis,f6,0,1,0,2,0,3,0,0,0,sqrt(1^2*pi^2/3),sqrt(2^2*pi^2/3),sqrt(3^2*pi^2/3),100,1)
+```
+
+### wyniki eksperymentu c)
+
+```{r, echo=FALSE}
+n=100
+X1=rcauchy(n,0,1)
+X2=rcauchy(n,0,2)
+X3=rcauchy(n,0,3)
+sd1=(sum((X1-mean(X1))^2)/(n-1))^(1/2)
+sd2=(sum((X2-mean(X2))^2)/(n-1))^(1/2)
+sd3=(sum((X3-mean(X3))^2)/(n-1))^(1/2)
+eksperyment(rcauchy,f6,0,1,0,2,0,3,0,0,0,sd1,sd2,sd3,100,1)
+```
+
+### wyniki eksperymentu d)
+
+```{r, echo=FALSE}
+eksperyment(rexp,f6,1,-100,1/2,-100,1/3,-100,1,2,3,1,2,3,100,1)
+```
+
+### wyniki eksperymentu e)
+
+```{r, echo=FALSE}
+eksperyment(rchisq,f6,1,-100,2,-100,3,-100,1,2,3,2^(1/2),4^(1/2),6^(1/2),100,1)
+```
+
+Jedynie w przypadku rozkładu normalnego prawdopodobieństwa pokrycia są bliskie 95%, widać niewielką różnicę w dokładności przybliżenia wraz ze spadkiem rozmiaru próbki.
+
+## zadanie 8, $n=20$
+
+### wyniki eksperymentu a)
+
+```{r, echo=FALSE}
+eksperyment(rnorm,f8,0,1,0,2,0,3,0,0,0,1,2,3,20,1)
+```
+
+### wyniki eksperymentu b)
+
+```{r, echo=FALSE}
+eksperyment(rlogis,f8,0,1,0,2,0,3,0,0,0,sqrt(1^2*pi^2/3),sqrt(2^2*pi^2/3),sqrt(3^2*pi^2/3),20,1)
+```
+
+### wyniki eksperymentu c)
+
+```{r, echo=FALSE}
+n=20
+X1=rcauchy(n,0,1)
+X2=rcauchy(n,0,2)
+X3=rcauchy(n,0,3)
+sd1=(sum((X1-mean(X1))^2)/(n-1))^(1/2)
+sd2=(sum((X2-mean(X2))^2)/(n-1))^(1/2)
+sd3=(sum((X3-mean(X3))^2)/(n-1))^(1/2)
+eksperyment(rcauchy,f8,0,1,0,2,0,3,0,0,0,sd1,sd2,sd3,20,1)
+```
+
+### wyniki eksperymentu d)
+
+```{r, echo=FALSE}
+eksperyment(rexp,f8,1,-100,1/2,-100,1/3,-100,1,2,3,1,2,3,20,1)
+```
+
+### wyniki eksperymentu e)
+
+```{r, echo=FALSE}
+eksperyment(rchisq,f8,1,-100,2,-100,3,-100,1,2,3,2^(1/2),4^(1/2),6^(1/2),20,1)
+```
+
+## zadanie 8, $n=100$
+
+### wyniki eksperymentu a)
+
+```{r, echo=FALSE}
+eksperyment(rnorm,f8,0,1,0,2,0,3,0,0,0,1,2,3,100,1)
+```
+
+### wyniki eksperymentu b)
+
+```{r, echo=FALSE}
+eksperyment(rlogis,f8,0,1,0,2,0,3,0,0,0,sqrt(1^2*pi^2/3),sqrt(2^2*pi^2/3),sqrt(3^2*pi^2/3),100,1)
+```
+
+### wyniki eksperymentu c)
+
+```{r, echo=FALSE}
+n=100
+X1=rcauchy(n,0,1)
+X2=rcauchy(n,0,2)
+X3=rcauchy(n,0,3)
+sd1=(sum((X1-mean(X1))^2)/(n-1))^(1/2)
+sd2=(sum((X2-mean(X2))^2)/(n-1))^(1/2)
+sd3=(sum((X3-mean(X3))^2)/(n-1))^(1/2)
+eksperyment(rcauchy,f8,0,1,0,2,0,3,0,0,0,sd1,sd2,sd3,100,1)
+```
+
+### wyniki eksperymentu d)
+
+```{r, echo=FALSE}
+eksperyment(rexp,f8,1,-100,1/2,-100,1/3,-100,1,2,3,1,2,3,100,1)
+```
+
+### wyniki eksperymentu e)
+
+```{r, echo=FALSE}
+eksperyment(rchisq,f8,1,-100,2,-100,3,-100,1,2,3,2^(1/2),4^(1/2),6^(1/2),100,1)
+```
+
+Jak w zadaniu 6, jedynie w przypadku rozkładu normalnego prawdopodobieństwa pokrycia są bliskie 95%, widać niewielką różnicę w dokładności przybliżenia wraz ze spadkiem rozmiaru próbki.
+
+## zadanie 10, $n=20$
+
+### wyniki eksperymentu a)
+
+```{r,echo=FALSE}
+df1 <- ramkidanych()
+df2 <- ramkidanych()
+df3 <- ramkidanych()
+
+for (i in 1:10000){
+  X1=rnorm(20,0,1)
+  X2=rnorm(20,0,2)
+  X3=rnorm(20,0,3)
+  df1[nrow(df1)+1,] <- f10(X1,1/2,20)
+  df2[nrow(df2)+1,] <- f10(X2,1/2,20)
+  df3[nrow(df3)+1,] <- f10(X3,1/2,20)
+}
+
+a=zawieranie(df1,1)
+a=zawieranie(df2,2)
+a=zawieranie(df3,3)
+
+par(mfrow=c(1, 3))
+wykresy('p',1/2,df1)
+wykresy('p',1/2,df2)
+wykresy('p',1/2,df3)
+```
+
+### wyniki eksperymentu b)
+
+```{r,echo=FALSE}
+df1 <- ramkidanych()
+df2 <- ramkidanych()
+df3 <- ramkidanych()
+
+for (i in 1:10000){
+  X1=rlogis(20,0,1)
+  X2=rlogis(20,0,2)
+  X3=rlogis(20,0,3)
+  df1[nrow(df1)+1,] <- f10(X1,1/2,20)
+  df2[nrow(df2)+1,] <- f10(X2,1/2,20)
+  df3[nrow(df3)+1,] <- f10(X3,1/2,20)
+}
+
+a=zawieranie(df1,1)
+a=zawieranie(df2,2)
+a=zawieranie(df3,3)
+
+par(mfrow=c(1, 3))
+wykresy('p',1/2,df1)
+wykresy('p',1/2,df2)
+wykresy('p',1/2,df3)
+```
+
+### wyniki eksperymentu c)
+
+```{r,echo=FALSE}
+df1 <- ramkidanych()
+df2 <- ramkidanych()
+df3 <- ramkidanych()
+
+for (i in 1:10000){
+  X1=rcauchy(20,0,1)
+  X2=rcauchy(20,0,2)
+  X3=rcauchy(20,0,3)
+  df1[nrow(df1)+1,] <- f10(X1,1/2,20)
+  df2[nrow(df2)+1,] <- f10(X2,1/2,20)
+  df3[nrow(df3)+1,] <- f10(X3,1/2,20)
+}
+
+a=zawieranie(df1,1)
+a=zawieranie(df2,2)
+a=zawieranie(df3,3)
+
+par(mfrow=c(1, 3))
+wykresy('p',1/2,df1)
+wykresy('p',1/2,df2)
+wykresy('p',1/2,df3)
+```
+
+## zadanie 10, $n=100$
+
+### wyniki eksperymentu a)
+
+```{r,echo=FALSE}
+df1 <- ramkidanych()
+df2 <- ramkidanych()
+df3 <- ramkidanych()
+
+for (i in 1:10000){
+  X1=rnorm(100,0,1)
+  X2=rnorm(100,0,2)
+  X3=rnorm(100,0,3)
+  df1[nrow(df1)+1,] <- f10(X1,1/2,100)
+  df2[nrow(df2)+1,] <- f10(X2,1/2,100)
+  df3[nrow(df3)+1,] <- f10(X3,1/2,100)
+}
+
+a=zawieranie(df1,1)
+a=zawieranie(df2,2)
+a=zawieranie(df3,3)
+
+par(mfrow=c(1, 3))
+wykresy('p',1/2,df1)
+wykresy('p',1/2,df2)
+wykresy('p',1/2,df3)
+```
+
+### wyniki eksperymentu b)
+
+```{r,echo=FALSE}
+df1 <- ramkidanych()
+df2 <- ramkidanych()
+df3 <- ramkidanych()
+
+for (i in 1:10000){
+  X1=rlogis(100,0,1)
+  X2=rlogis(100,0,2)
+  X3=rlogis(100,0,3)
+  df1[nrow(df1)+1,] <- f10(X1,1/2,100)
+  df2[nrow(df2)+1,] <- f10(X2,1/2,100)
+  df3[nrow(df3)+1,] <- f10(X3,1/2,100)
+}
+
+a=zawieranie(df1,1)
+a=zawieranie(df2,2)
+a=zawieranie(df3,3)
+
+par(mfrow=c(1, 3))
+wykresy('p',1/2,df1)
+wykresy('p',1/2,df2)
+wykresy('p',1/2,df3)
+```
+
+### wyniki eksperymentu c)
+
+```{r,echo=FALSE}
+df1 <- ramkidanych()
+df2 <- ramkidanych()
+df3 <- ramkidanych()
+
+for (i in 1:10000){
+  X1=rcauchy(100,0,1)
+  X2=rcauchy(100,0,2)
+  X3=rcauchy(100,0,3)
+  df1[nrow(df1)+1,] <- f10(X1,1/2,100)
+  df2[nrow(df2)+1,] <- f10(X2,1/2,100)
+  df3[nrow(df3)+1,] <- f10(X3,1/2,100)
+}
+
+a=zawieranie(df1,1)
+a=zawieranie(df2,2)
+a=zawieranie(df3,3)
+
+par(mfrow=c(1, 3))
+wykresy('p',1/2,df1)
+wykresy('p',1/2,df2)
+wykresy('p',1/2,df3)
+```
+
+Nie zauważam dużego wpływu rozmiaru danych na wyniki. I dla $n=20$ i dla $n=100$ wszystkie prawdopodobieństwa pokrycia są bliskie 95%.
