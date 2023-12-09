@@ -1,0 +1,126 @@
+---
+title: "Sprawozdanie1 Modele liniowe"
+author: "Katarzyna Stasińska"
+date: "2023-10"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(1)
+```
+
+## zadanie 1
+Aby wygenerować 1000 wektorów losowych z rozkładu dwuwymiarowego normalnego $N(0,I_{2\times2})$ wystarczy posłużyć się funkcją $mvrnorm$ z biblioteki $MAAS$.
+```{r,echo=TRUE}
+library(MASS)
+mean=rep(c(0),2)
+var=diag(2)
+X=mvrnorm(1000, mean,var)
+plot(X,asp=1)
+```
+
+## zadanie 2
+Chcemy znaleźć $Y$ takiego, że $Y\sim N(\mu,\Sigma)$. Można opisać to prostym przekształceniem liniowym $Y=AX+B$, gdzie $B=\mu$, a $A$ uzyskamy używając rozkładu Choleskiego. Poniżej przedstawiam jak chmura zachowuje się dla kolejnych $\rho$. Zielone proste wyznaczają osie symetrii chmur. Parametr $\rho$ wpływa na zakrzywienie pierwotnej chmury (opisuje korelację między współrzędnymi).
+
+```{r,echo=FALSE}
+B=c(4,2)
+pval=c(0.5,-0.5,0.9,-0.9)
+#l=layout(matrix(c(1,2,3,4), nrow = 2, ncol = 2,byrow=TRUE))
+#par(mfrow = c(2, 2))
+for (j in 1:4) {
+  sigma=matrix(c(1,pval[j],pval[j],1),2,2)
+  A=t(chol(sigma))
+  a=eigen(sigma)$vectors
+  Y=X
+  n=1000
+  for (i in 1:1000){
+  Y[i,1]<-(A%*%matrix(c(X[i,1],X[i,2]),2,1)+B)[1]
+  Y[i,2]<-(A%*%matrix(c(X[i,1],X[i,2]),2,1)+B)[2]
+  }
+  a1=a[2]/a[1]; a2=a[4]/a[3]; b=B[2];
+  x = seq(-20, 10, 0.1)
+  y1 = a1*x
+  y2 = a2*x
+  plot(Y,asp=1,main=paste("parametr: ", pval[j]))
+  points(x+4,y1+2,type="l",col="green")
+  points(x+4,y2+2,type="l",col="green")
+}
+```
+
+## zadanie 3
+Analogicznie jak w zadaniu 2 wyznaczamy przekształcenie liniowe. Poniżej prezentuję wykresy dla kolejnych $\sigma$. Zwróćmy uwagę, że dla $\sigma=3$ nasze przekształcenie wygląda w następujący sposób: 
+$$
+Y = \begin{bmatrix} 3 & 0 \\ 0 & 1 \end{bmatrix}X + \begin{bmatrix} 4 \\ 2 \end{bmatrix}
+$$
+Oznacza to, że wartość współrzędnej $y$ każdego punktu z chmury pozostaje niezmieniona, a wartość $x$ zostaje zwiększona trzy razy. Następnie ma miejsce translacja o wektor $\begin{bmatrix} 4 \\ 2 \end{bmatrix}$. Oznacza to, że nasza chmura została rozciągnięta wzdłuż osi X trzy razy ($\sigma$ razy). Analogicznie w przypadku $\sigma=4$.
+
+```{r,echo=FALSE} 
+B=c(4,2)
+sigmaval=c(3,4)
+for (j in 1:2) {
+  sigma=matrix(c((sigmaval[j])**2,0,0,1),2,2)
+  A=t(chol(sigma))
+  Y=X
+  i=2
+  for (i in 1:1000){
+  Y[i,]<-(A%*%matrix(c(X[i,1],X[i,2]),nrow=2,ncol=1)+B)
+  }
+  plot(Y)
+}
+```
+
+## zadanie 4
+Poniżej prezentuję funkcję, która implementuje rozkład Choleskiego. Zwróćmy uwagę, że zwracając macierz mogłabym jej nie transponować, ale trzymając się ściśle tego jak działa funkcja $chol()$ w $\textit{R}$ zdecydowałam się na to. Na samym końcu zamieściłam porównanie dwóch macierzy, jedna znich została otrzymana przy użyciu funkcji $chol()$ na pewnej macierzy, druga z nich została otrzymana przy użyciu mojej funkcji na tej samej macierzy.
+```{r,echo=FALSE}
+sigma=matrix(rep(c(0.9),10000),100,100)+diag(100)*0.1
+```
+```{r,echo=TRUE}
+Choleski=function(A){
+  L=A*0
+  for(j in 1:100){
+    for(i in 1:j){
+      if(i==j){
+        L[i,i]=sqrt(A[i,i]-sum((L[i,1:i-1])**2))
+      }
+      else{
+        L[j,i]=(A[j,i]-sum(L[i,1:i-1]*L[j,1:i-1]))/L[i,i]
+      }
+    }
+  }
+  return(t(L))
+}
+
+chole=Choleski(sigma)
+chole2=chol(sigma)
+all.equal(chole,chole2)
+```
+Wykresy przedstawiają próbkową wariancję współrzędnych oraz próbkową kowariancję współrzędnych. Zwróćmy uwagę, że na pierwszym z nich wartości oscylują w okolicy 1, a na drugim w okolicy 0.9, co spełania założenia zadania. Środkami histogramów nie są odpowiednio 1 i 0.9, ponieważ danych jest niewiele i są bardzo ze sobą skorelowane. Patrząc na wektor pierwszych współrzędnych, wektor drugich współrzędnych, wektor n-tych współrzędnych, możemy zauważyć, że wszystkie są bardzo podobne do siebie, są tak naprawdę wektorem pierwszych współrzędnych z delikatnymi zmianami. 
+
+```{r,echo=FALSE}
+library(MASS)
+l=layout(matrix(c(1, 2), nrow = 1, ncol = 2, byrow = TRUE))
+mean=rep(c(0),100)
+var=diag(100)
+X=mvrnorm(1000, mean,var)
+A=t(Choleski(sigma))
+X1=A%*%t(X)
+srednie=rowMeans(X1)
+wariancjaprobkowa=c()
+for (i in 1:100){
+  wariancjaprobkowa=append(wariancjaprobkowa,sum((X1[i,]-srednie[i])**2)*(1/1000))
+}
+hist(wariancjaprobkowa)
+kowariancjaprobkowa=c()
+for(i in 1:100){
+  for(j in i:100){
+    if(i!=j){
+      kowariancjaprobkowa=append(kowariancjaprobkowa,sum((X1[i,]-srednie[i])*(X1[j,]-srednie[j]))*(1/1000))
+    }
+  }
+}
+hist(kowariancjaprobkowa)
+
+
+#srednie =0, wariancja=1, kowariancja=0.9
+```
