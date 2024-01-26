@@ -1,3 +1,7 @@
 # Statystyka i Modele liniowe
+Uwr semestr zimowy 2023/2024
 
-raporty, zadania, kody źródłowe w R
+Statystyka  ???
+
+Modele
+wszystkie raporty + teoria + dane
