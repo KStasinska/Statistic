@@ -1,0 +1,326 @@
+---
+title: "ModeleLiniowe4"
+author: "Katarzyna Stasińska"
+date: "2023-12"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(123)
+```
+
+# Zadanie 1
+
+## a)
+
+```{r, echo=TRUE}
+library(MASS)
+sigma = matrix( c(1,0.9,0.9,1),2,2)
+mi = c(0,0)
+dane <- mvrnorm(n = 100, mi, sigma/100)
+eps = rnorm(100,0,1)
+Y = 3 * dane[,1] + eps
+```
+
+## b) 
+
+### prosty model
+
+```{r, echo=FALSE}
+reg1 = lm(Y ~ dane[,1])
+a = confint(reg1)
+cat("Przedział ufności B1 = (",a[2,1],",",a[2,2],")")
+```
+
+Ustalmy poziom istotności $\alpha=0,05$
+  
+Hipotezy: $H_{0}: \beta_{1}=0 \quad H_{1}: \beta_{1} \ne 0$
+
+```{r, echo=FALSE}
+pslope=summary(reg1)$coefficients[2, "Pr(>|t|)"]
+tslope=summary(reg1)$coefficients[2, "t value"]
+```
+
+```{r,echo=FALSE}
+cat("statystyka testowa:",tslope,", p-wartosc:",pslope)
+```
+
+Możemy zauważyć, że $p>\alpha$, zatem nie możemy odrzucić hipotezy $H_{0}$.
+
+### dwie zmienne objaśniające
+
+```{r, echo=FALSE}
+reg2 = lm(Y ~ dane[,1] + dane[,2])
+a = confint(reg2)
+cat("Przedział ufności B1 = (",a[2,1],",",a[2,2],")")
+```
+
+Ustalmy poziom istotności $\alpha=0,05$
+  
+Hipotezy: $H_{0}: \beta_{1}=0 \quad H_{1}: \beta_{1} \ne 0$
+
+```{r, echo=FALSE}
+pslope=summary(reg2)$coefficients[2, "Pr(>|t|)"]
+tslope=summary(reg2)$coefficients[2, "t value"]
+```
+
+```{r,echo=FALSE}
+cat("statystyka testowa:",tslope,", p-wartosc:",pslope)
+```
+
+Możemy zauważyć, że $p>\alpha$, zatem nie możemy odrzucić hipotezy $H_{0}$.
+
+W przypadku żadnego z tych dwóch modeli nie możemy odrzucić hipotezy 0. Prosty model wyznacza krótszy przedział ufności dla parametru $\beta_{1}$. Oba przedziały ufności zawierają ustaloną wartość $\beta_{1} = 3$.
+
+## c)
+
+```{r, echo=FALSE}
+n = length(dane[,1])
+Xmean <- mean(dane[, 1])
+s2 <- sum((Y - predict(reg1))^2)/(n-2)
+se1 <- sqrt(s2 / sum((dane[, 1] - Xmean)^2))
+cat("Model pierwszy: Odchylenie standardowe estymatora B1 wynosi",se1)
+delta = 3 / se1
+kwantyl=qt(0.975,n-2)
+power=pt(-kwantyl, n-2) + 1 - pt(kwantyl, n-2, ncp = delta)
+cat("Moc identyfikacji X1, to jest moc B1 wynosi",power)
+
+X = matrix(c(rep(1,100),dane[,1],dane[,2]),100,3)
+s2 <- sum((Y - predict(reg2))^2)/(n-3)
+se2 <- sqrt(s2*solve(t(X) %*% X)[2,2])
+cat("Model drugi: Odchylenie standardowe estymatora B1 wynosi",se2)
+delta2 = 3 / se2
+kwantyl=qt(0.975,n-3)
+power=pt(-kwantyl, n-3, ncp = delta2) + 1 - pt(kwantyl, n-3, ncp = delta2)
+cat("Moc identyfikacji X1, to jest moc B1 wynosi",power)
+```
+
+## d)
+
+```{r,echo=FALSE}
+B1v1 = c()
+B1v2 = c()
+counter1 = 0
+counter2 = 0
+for (i in 1:1000){
+  eps = rnorm(100,0,1)
+  Y = 3 * dane[,1] + eps
+  reg1 = lm(Y ~ dane[,1])
+  reg2 = lm(Y ~ dane[,1] + dane[,2])
+  B1v1 = c(B1v1, summary(reg1)$coefficients[2])
+  B1v2 = c(B1v2,summary(reg2)$coefficients[2])
+  if (summary(reg1)$coefficients[2, "Pr(>|t|)"] < 0.05){
+    counter1 = counter1 + 1
+  }
+  if (summary(reg2)$coefficients[2, "Pr(>|t|)"] < 0.05){
+    counter2 = counter2 + 1
+  }
+}
+cat("model1, wyestymowane sd:",sqrt((sum((B1v1 - mean(B1v1))^2))/(length(B1v1) - 1)),"wyestymowana moc:",counter1/1000)
+cat("model2, wyestymowane sd:",sqrt((sum((B1v2 - mean(B1v2))^2))/(length(B1v2) - 1)),"wyestymowana moc:",counter2/1000)
+```
+
+Wyniki są bliskie wartościom teoretycznym.
+
+Możemy zwrócić uwagę, że przy uwzględnieniu w modelu dodatkowej zmiennej objaśniającej mocno skorelowanej ze zmienną, której istotność badamy, moc $\beta_{1}$ znacząco maleje.
+
+# Zadanie 2
+
+## a)
+
+```{r,echo=TRUE}
+X = rnorm(950000,0,0.1)
+X = matrix(X,1000,950)
+B = c(3,3,3,3,3,rep(0,945))
+eps = rnorm(1000,0,1)
+Y = X %*% B + eps
+```
+
+## b)
+
+```{r, echo=FALSE}
+istotnosc = function(matrix, beta, x, kwantyl){
+  tstat = beta[x]/sqrt(matrix[x,x])
+  if(abs(tstat) > kwantyl) {return(TRUE)}
+  return(FALSE)
+}
+
+n = 1000
+
+for (k in c(1,2,5,10,50,100,500,950)){
+  cat("k=", k,"\n")
+  Xpom = X[,1:k]
+  Bety = solve(t(Xpom) %*% Xpom) %*% (t(Xpom)) %*% Y
+  reg = lm(Y~.-1, data.frame(Y,Xpom))
+  s2 = sum((Y - predict(reg))^2)/(n-(k+1))
+  seB2 = s2 * solve(t(Xpom) %*% Xpom)
+  kwantyl = qt(0.975,n-(k+1))
+  ist <- sapply(seq(1:k), function(x) istotnosc(seB2, Bety, x, kwantyl))
+  cat("liczba istotnych regresororów o indeksach <=5:", length(which(ist[1:min(k,5)])),"\n")
+  cat("liczba istotnych regresororów o pozostałych indeksach (liczba fałszywych odkryć):", length(which(ist)) - length(which(ist[1:min(k,5)])),"\n")
+  SSE = sum((Y - predict(reg))^2)
+  cat("\n")
+  cat("SSE=",SSE,"\n")
+  cat("MSE=", sum((Xpom %*%(Bety-B[1:k]))^2),"\n")
+  cat("AIC=",n*log(SSE/n) + 2*k,"\n")
+  if (k == 1) {cat("pvalue1=", summary(reg)$coefficients[1, "Pr(>|t|)"],"\n")}
+  else {cat("pvalue1=", summary(reg)$coefficients[1, "Pr(>|t|)"],"pvalue2=", summary(reg)$coefficients[2, "Pr(>|t|)"],"\n")}
+  cat("\n")
+}
+```
+
+Model biorący 5 pierwszych kolumn macierzy planu ma najmniejszą wartość AIC, zatem jest najlepszy biorąc pod uwagę to kryterium. Nie uwzględniamy modelu biorącego pod uwagę wszystkie kolumny, bo nie jest on zgodny z założeniami AIC (próbka musi być znacząco większa niż liczba estymowanych zmiennych).
+
+## c)
+
+```{r,echo=FALSE}
+Bety = solve(t(X) %*% X) %*% (t(X)) %*% Y
+sorted_indices = order(-abs(Bety))
+
+for (k in c(1,2,5,10,50,100,500,950)){
+  sorted = sorted_indices[1:k]
+  cat("k=", k,"\n")
+  Xpom = X[,sorted]
+  Bety = solve(t(Xpom) %*% Xpom) %*% (t(Xpom)) %*% Y
+  reg = lm(Y~.-1, data.frame(Y,Xpom))
+  s2 = sum((Y - predict(reg))^2)/(n-(k+1))
+  seB2 = s2 * solve(t(Xpom) %*% Xpom)
+  kwantyl = qt(0.975,n-(k+1))
+  ist <- sapply(seq(1:k), function(x) istotnosc(seB2, Bety, x, kwantyl))
+  indeksy = sorted[which(ist)]
+  cat("liczba istotnych regresororów o indeksach <=5:", length(which(indeksy<=5)),"\n")
+  cat("liczba istotnych regresororów o pozostałych indeksach (liczba fałszywych odkryć):", length(which(ist)) - length(which(indeksy<=5)),"\n")
+  SSE = sum((Y - predict(reg))^2)
+  cat("\n")
+  cat("SSE=",SSE,"\n")
+  cat("MSE=", sum((Xpom %*%(Bety-B[1:k]))^2),"\n")
+  cat("AIC=",n*log(SSE/n) + 2*k,"\n")
+  if (k == 1) {cat("pvalue1=", summary(reg)$coefficients[1, "Pr(>|t|)"],"\n")}
+  else {cat("pvalue1=", summary(reg)$coefficients[1, "Pr(>|t|)"],"pvalue2=", summary(reg)$coefficients[2, "Pr(>|t|)"],"\n")}
+  cat("\n")
+}
+```
+
+Model biorący 500 pierwszych kolumn macierzy planu ma najmniejszą wartość AIC, zatem jest najlepszy biorąc pod uwagę to kryterium. Nie uwzględniamy modelu biorącego pod uwagę wszystkie kolumny, bo nie jest on zgodny z założeniami AIC (próbka musi być znacząco większa niż liczba estymowanych zmiennych).
+
+Porównując oba przykłady możemy zauważyć, że gdy nie mamy żadnych informacji o tym, jakie regresory są istotne (podpunkt c)), test AIC wskazał model, który zawiera bardzo dużo potencjalnie istotnych regresorów (314), a wiemy, że jest ich jedynie 5.
+
+W obu przypadkach SSE maleje wraz ze wzrostem k, a MSE rośnie.
+
+## d)
+
+```{r,echo=FALSE}
+moc1 <- data.frame(matrix(ncol = 8, nrow = 0))
+moc2 <- data.frame(matrix(ncol = 8, nrow = 0))
+meanFalse <- data.frame(matrix(ncol = 8, nrow = 0))
+moc12 <- data.frame(matrix(ncol = 8, nrow = 0))
+moc22 <- data.frame(matrix(ncol = 8, nrow = 0))
+meanFalse2 <- data.frame(matrix(ncol = 8, nrow = 0))
+
+x <- c("1","2","5","10","50","100","500","950")
+colnames(moc1) <- x
+colnames(moc2) <- x
+colnames(meanFalse) <- x
+colnames(moc12) <- x
+colnames(moc22) <- x
+colnames(meanFalse2) <- x
+
+lengths = c()
+lengths2 = c()
+
+for (i in 1:1000){
+  eps = rnorm(1000,0,1)
+  Y = X %*% B + eps
+  power1 = c()
+  power2 = c(0)
+  mf = c()
+  power12 = c()
+  power22 = c(0)
+  mf2 = c()
+  minaic = Inf
+  minlen = 0
+  for (k in c(1,2,5,10,50,100,500,950)){
+    Xpom = X[,1:k]
+    Bety = solve(t(Xpom) %*% Xpom) %*% (t(Xpom)) %*% Y
+    reg = lm(Y~.-1, data.frame(Y,Xpom))
+    s2 = sum((Y - predict(reg))^2)/(n-(k+1))
+    seB2 = s2 * solve(t(Xpom) %*% Xpom)
+    kwantyl = qt(0.975,n-(k+1))
+    ist <- sapply(seq(1:k), function(x) istotnosc(seB2, Bety, x, kwantyl))
+    mf = c(mf,length(which(ist)) - length(which(ist[1:min(k,5)])))
+    SSE = sum((Y - predict(reg))^2)
+    if (summary(reg)$coefficients[1, "Pr(>|t|)"] < 0.05) {power1 = c(power1,1)}
+    else {power1 = c(power1,0)}
+    if (k > 1){
+      if (summary(reg)$coefficients[2, "Pr(>|t|)"] < 0.05) {power2 = c(power2,1)}
+      else {power2 = c(power2,0)}
+    }
+    if (n*log(SSE/n) + 2*k < minaic && k != 950){
+      minaic = n*log(SSE/n) + 2*k
+      minlen = length(which(ist))
+    }
+  }
+  moc1[nrow(moc1)+1,] = power1
+  moc2[nrow(moc2)+1,] = power2
+  meanFalse[nrow(meanFalse)+1,] = mf
+  
+  lengths = c(lengths,minlen)
+  
+  minaic = Inf
+  minlen = 0
+  Bety = solve(t(X) %*% X) %*% (t(X)) %*% Y
+  sorted_indices = order(-abs(Bety))
+  for (k in c(1,2,5,10,50,100,500,950)){
+    sorted = sorted_indices[1:k]
+    Xpom = X[,sorted]
+    Bety = solve(t(Xpom) %*% Xpom) %*% (t(Xpom)) %*% Y
+    reg = lm(Y~.-1, data.frame(Y,Xpom))
+    s2 = sum((Y - predict(reg))^2)/(n-(k+1))
+    seB2 = s2 * solve(t(Xpom) %*% Xpom)
+    kwantyl = qt(0.975,n-(k+1))
+    ist <- sapply(seq(1:k), function(x) istotnosc(seB2, Bety, x, kwantyl))
+    indeksy = sorted[which(ist)]
+    mf2 = c(mf2,length(which(ist)) - length(which(indeksy<=5)))
+    SSE = sum((Y - predict(reg))^2)
+    if (summary(reg)$coefficients[1, "Pr(>|t|)"] < 0.05) {power12 = c(power12,1)}
+    else {power12 = c(power12,0)}
+    if (k > 1){
+      if (summary(reg)$coefficients[2, "Pr(>|t|)"] < 0.05) {power22 = c(power22,1)}
+      else {power22 = c(power22,0)}
+    }
+    if (n*log(SSE/n) + 2*k < minaic && k != 950){
+      minaic = n*log(SSE/n) + 2*k
+      minlen = length(which(ist))
+    }
+  }
+  lengths2 = c(lengths2,minlen)
+  
+  moc12[nrow(moc12)+1,] = power12
+  moc22[nrow(moc22)+1,] = power22
+  meanFalse2[nrow(meanFalse2)+1,] = mf2
+}
+
+print("Średnia liczba fałszywych odkryć")
+print("b)")
+colMeans(meanFalse)
+print("c)")
+colMeans(meanFalse2)
+
+print("Moc identyfikacji X1")
+print("b)")
+colMeans(moc1)
+print("c)")
+colMeans(moc12)
+
+print("Moc identyfikacji X2")
+print("b)")
+colMeans(moc2)
+print("c)")
+colMeans(moc22)
+
+cat("Średni rozmiar modelu b)",mean(lengths))
+cat("Średni rozmiar modelu c)",mean(lengths2))
+```
+
+

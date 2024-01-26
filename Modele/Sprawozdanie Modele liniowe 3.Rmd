@@ -1,0 +1,559 @@
+---
+title: "Sprawozdanie Modele liniowe 3"
+author: "Katarzyna Stasińska"
+date: "2023-11"
+output: pdf_document
+---
+
+# Zadanie 1
+
+## a)
+
+```{r,echo=FALSE}
+path='/home/kasia/Desktop/Modele/tabela1_6.txt'
+dane=read.table(path,col.names=c("indeks","GPA","IQ","płeć","PH"))
+plot(GPA~IQ,dane)
+reg1=lm(GPA~IQ, dane)
+intercept=reg1$coefficients[1]
+slope=reg1$coefficients[2]
+abline(intercept,slope,col='green')
+cat(paste0("Równanie regresji to Y = ",round(slope,4),"X + ",round(intercept,4)))
+```
+
+```{r,echo=FALSE}
+r_squared <- summary(reg1)$r.squared
+print(paste("Współczynnik determinacji polecenia wbudowane: ", r_squared))
+
+y_pred <- slope * dane$IQ + intercept
+y_mean <- mean(dane$GPA) 
+ssm <- sum((y_pred - y_mean)^2)
+sst <- sum((dane$GPA - y_mean)^2)
+r_squared2=ssm/sst
+print(paste("Współczynnik determinacji wzory teoretyczne: ", r_squared2))
+```
+
+Współczynnik determinacji $R^{2}$ jest miarą jakości dopasowania modelu. Na podstawie statystyki $R^2$ możemy powiedzieć, że zmienność wyjaśniona przez model stanowi 40,2% zmienności całkowitej Y.
+
+## b)
+
+Aby przetestować hipotezę, że GPA nie jest skorelowane z IQ, należy rozważyć hipotezę: $H_{0}: \beta_{1}=0$. Korzystając z funkcji wbudowanych mamy:
+
+```{r,echo=FALSE}
+f_statistic <- summary(reg1)$fstatistic[1]
+p_value <- pf(summary(reg1)$fstatistic[1], summary(reg1)$fstatistic[2], summary(reg1)$fstatistic[3], lower.tail = FALSE)
+
+cat(paste("Statystyka testowa ",f_statistic,"z 1 i 76 stopniami swobody."))
+cat(paste("p-value wynosi ",p_value))
+```
+
+Korzystając ze wzorów teoretycznych mamy:
+
+```{r,echo=FALSE}
+msm <- sum((y_pred - y_mean)^2)/1
+mse <- sum((dane$GPA-y_pred)^2)/(length(dane$GPA)-2)
+f_statictic <- msm/mse
+p_value <- 1 - pf(f_statistic, 1, 76)
+
+cat(paste("Statystyka testowa ",f_statistic,"z 1 i 76 stopniami swobody."))
+cat(paste("p-value wynosi ",p_value))
+```
+
+Ustalając standardowy poziom istotności $\alpha=0.05$ mamy $p<\alpha$, odrzucamy hipotezę zerową. GPA i IQ są ze sobą skorelowane.
+
+## c)
+
+```{r,echo=FALSE}
+for (k in c(75,100,140)) {
+  new_data <- data.frame(IQ = k)
+  pred <- predict(reg1, newdata = new_data, interval = "prediction", level = 0.90)
+  
+  cat(paste("Dla k=", k, " Przewidywane GPA:", pred[1], "\n"))
+  cat(paste("Przedział predykcyjny [", pred[2], ",", pred[3], "]\n\n"))
+}
+```
+
+## d)
+
+```{r,echo=FALSE}
+new_data <- seq(min(dane$IQ),max(dane$IQ),by = 0.05)
+pred <- predict(reg1, newdata = data.frame(IQ = new_data), interval = "prediction", level = 0.90)
+plot(GPA~IQ, dane)
+abline(intercept,slope,col='green')
+matlines(new_data, pred[,2:3], col = "red", lty=2)
+```
+
+6 obserwacji znajduje się poza tymi przedziałami, liczba ta podzielona przez wszystkie inne obserwacje powinna wynosić około 10%. $6/78 = 0.07692308$
+
+# Zadanie 2
+
+## a)
+
+```{r,echo=FALSE}
+path='/home/kasia/Desktop/Modele/tabela1_6.txt'
+dane=read.table(path,col.names=c("indeks","GPA","IQ","płeć","PH"))
+plot(GPA~PH,dane)
+reg1=lm(GPA~PH, dane)
+intercept=reg1$coefficients[1]
+slope=reg1$coefficients[2]
+abline(intercept,slope,col='green')
+cat(paste0("Równanie regresji to Y = ",round(slope,4),"X + ",round(intercept,4)))
+```
+
+```{r,echo=FALSE}
+r_squared <- summary(reg1)$r.squared
+print(paste("Współczynnik determinacji: ", r_squared))
+```
+
+Współczynnik determinacji $R^{2}$ jest miarą jakości dopasowania modelu. Na podstawie statystyki $R^2$ możemy powiedzieć, że zmienność wyjaśniona przez model stanowi 29,4% zmienności całkowitej Y.
+
+## b)
+
+Aby przetestować hipotezę, że GPA nie jest skorelowane z PH, należy rozważyć hipotezę: $H_{0}: \beta_{1}=0$.
+
+```{r,echo=FALSE}
+f_statistic <- summary(reg1)$fstatistic[1]
+p_value <- pf(summary(reg1)$fstatistic[1], summary(reg1)$fstatistic[2], summary(reg1)$fstatistic[3], lower.tail = FALSE)
+
+cat(paste("Statystyka testowa ",f_statistic,"z 1 i 76 stopniami swobody."))
+cat(paste("p-value wynosi ",p_value))
+```
+
+Ustalając standardowy poziom istotności $\alpha=0.05$ mamy $p<\alpha$, odrzucamy hipotezę zerową. GPA i PH są ze sobą skorelowane.
+
+## c)
+
+```{r,echo=FALSE}
+for (k in c(25,55,85)) {
+  new_data <- data.frame(PH = k)
+  pred <- predict(reg1, newdata = new_data, interval = "prediction", level = 0.90)
+  
+  cat(paste("Dla k=", k, " Przewidywane GPA:", pred[1], "\n"))
+  cat(paste("Przedział predykcyjny [", pred[2], ",", pred[3], "]\n\n"))
+}
+```
+
+## d)
+
+```{r,echo=FALSE}
+new_data <- seq(min(dane$PH),max(dane$PH),by = 0.05)
+pred <- predict(reg1, newdata = data.frame(PH = new_data), interval = "prediction", level = 0.90)
+plot(GPA~PH, dane)
+abline(intercept,slope,col='green')
+matlines(new_data, pred[,2:3], col = "red", lty=2)
+```
+
+W tym przypadku również 6 obserwacji znajduje się poza tymi przedziałami, liczba ta podzielona przez wszystkie inne obserwacje powinna wynosić około 10%. $6/78 = 0.07692308$
+
+## e) 
+
+Wynik testu IQ jest lepszym predyktorem GPA, ponieważ przedziały predykcyjne mają mniejszą szerokość. Poza tym współczynnik determinacji przyjmuje większą wartość.
+
+```{r,echo=FALSE}
+path='/home/kasia/Desktop/Modele/CH01PR20.txt'
+dane=read.table(path,col.names=c("hours", "size"))
+```
+
+# zadanie 3
+
+## a)
+
+```{r,echo=TRUE}
+reg1 = lm(hours~size, dane)
+residuals = reg1$residuals
+sum(residuals)
+```
+Na podstawie powyższych obliczeń możemy zauważyć, że suma residuów jest prawie równa zero. 
+
+## b)
+
+```{r, echo = FALSE}
+plot(residuals~dane$size)
+```
+
+Dwie wartości w okolicach -20, dla rozmiaru równego 8 i rozmiaru równego 10 mogą świadczyć o jakiejś tendencji wraz ze wzrostem rozmiaru. Wartości residuuów oscylują wokół zera.
+
+## c)
+
+```{r, echo = FALSE}
+plot(residuals)
+```
+
+Nie zauważam żadnych nietypowych wzorców. 
+
+## d)
+
+```{r, echo = FALSE}
+par( mfrow= c(1,2) )
+hist(residuals)
+qqnorm(residuals)
+```
+
+Na podstawie powyższych wykresów można stwierdzić, że residua z dużym prawdopodobieństwem nie pochodzą z rozkładu normalnego. Na obu wykresach ogony są niedopasowane.
+
+# zadanie 4
+
+## a)
+
+```{r,echo=FALSE}
+dane2 = dane
+dane2[nrow(dane2)+1,]=c(1000,2)
+reg2 = lm(hours~size, dane2)
+
+df<- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("nazwa","reg1","reg2")
+colnames(df) <- x
+df[nrow(df)+1,] = c("równanie",paste("Y=",round(reg1$coefficients[2],4),"*X",round(reg1$coefficients[1],4),sep=""),paste("Y=",round(reg2$coefficients[2],4),"*X+",round(reg2$coefficients[1],4),sep=""))
+df[nrow(df)+1,] = c("t value",summary(reg1)$coefficients["size", "t value"],summary(reg2)$coefficients["size", "t value"])
+df[nrow(df)+1,] = c("p value",summary(reg1)$coefficients["size", "Pr(>|t|)"],summary(reg2)$coefficients["size", "Pr(>|t|)"])
+df[nrow(df)+1,] = c("R^2",summary(reg1)$r.squared,summary(reg2)$r.squared)
+df[nrow(df)+1,] = c("sigma^2",summary(reg1)$sigma^2,summary(reg2)$sigma^2)
+df
+```
+
+W przypadku zmodyfikowanych danych p-wartość jest na tyle duża, że przy standardowym $\alpha=0.05$ nie możemy odrzucić hipotezy zerowej. Sam model nie jest zbyt dobrze określony, wartość $R^2$ jest mała, a wariancja błędów bardzo wysoka. W przeciwieństwie do początkowych danych, które wykluczają hipotezę zerową, a pozostałe parametry świadczą o dość dobrym dobraniu modelu.
+
+## b)
+
+### b)
+
+```{r, echo = FALSE}
+residuals = reg2$residuals
+plot(residuals~dane2$size)
+```
+
+Nietypową obserwacją jest ta obserwacja, którą dodaliśmy. Umieszczenie jej na wykresie sprawia, że wartości pozostałych residuuów są niewidoczne, przez co ciężko wyciągać z nich jakiekolwiek wnioski.
+
+### c)
+
+```{r, echo = FALSE}
+plot(residuals)
+```
+
+Ponownie nietypową obserwacją jest ta obserwacja, którą dodaliśmy. Umieszczenie jej na wykresie sprawia, że wartości pozostałych residuuów są niewidoczne, przez co ciężko wyciągać z nich jakiekolwiek wnioski.
+
+### d)
+
+```{r, echo = FALSE}
+par( mfrow= c(1,2) )
+hist(residuals)
+qqnorm(residuals)
+```
+
+Na podstawie powyższych wykresów nie można stwierdzić, czy residua pochodzą z rozkładu normalnego. Dodanie obserwacji o znacznie większej wartości niż pozostałe sprawiło, że odczytanie z wykresów jak zachowują się residua jest niemożliwe.
+
+## c)
+
+### a)
+
+```{r,echo=FALSE}
+dane2 = dane
+dane2[nrow(dane2)+1,]=c(1000,6)
+reg2 = lm(hours~size, dane2)
+
+df<- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("nazwa","reg1","reg2")
+colnames(df) <- x
+df[nrow(df)+1,] = c("równanie",paste("Y=",round(reg1$coefficients[2],4),"*X",round(reg1$coefficients[1],4),sep=""),paste("Y=",round(reg2$coefficients[2],4),"*X+",round(reg2$coefficients[1],4),sep=""))
+df[nrow(df)+1,] = c("t value",summary(reg1)$coefficients["size", "t value"],summary(reg2)$coefficients["size", "t value"])
+df[nrow(df)+1,] = c("p value",summary(reg1)$coefficients["size", "Pr(>|t|)"],summary(reg2)$coefficients["size", "Pr(>|t|)"])
+df[nrow(df)+1,] = c("R^2",summary(reg1)$r.squared,summary(reg2)$r.squared)
+df[nrow(df)+1,] = c("sigma^2",summary(reg1)$sigma^2,summary(reg2)$sigma^2)
+df
+```
+
+Ponownie w przypadku zmodyfikowanych danych p-wartość jest na tyle duża, że przy standardowym $\alpha=0.05$ nie możemy odrzucić hipotezy zerowej. Sam model nie jest zbyt dobrze określony, wartość $R^2$ jest mała, a wariancja błędów bardzo wysoka. W przeciwieństwie do początkowych danych, które wykluczają hipotezę zerową, a pozostałe parametry świadczą o dość dobrym dobraniu modelu.
+
+### b)
+
+```{r, echo = FALSE}
+residuals = reg2$residuals
+plot(residuals~dane2$size)
+```
+
+```{r, echo = FALSE}
+plot(residuals)
+```
+
+```{r, echo = FALSE}
+par( mfrow= c(1,2) )
+hist(residuals)
+qqnorm(residuals)
+```
+
+W przypadku wszystkich wykresów można wysnuć dokładnie takie same wnioski, co w przypadku dodania obserwacji $(1000;2)$. 
+
+# zadanie 5
+
+## a)
+
+```{r,echo=FALSE}
+path='/home/kasia/Desktop/Modele/CH03PR15.txt'
+dane=read.table(path,col.names=c("concentration", "time"))
+
+reg1=lm(concentration~time, dane)
+plot(concentration~time,dane)
+intercept=reg1$coefficients[1]
+slope=reg1$coefficients[2]
+abline(intercept,slope,col='green')
+cat(paste0("Równanie regresji to Y = ",round(slope,4),"X + ",round(intercept,4)))
+
+new_data <- seq(min(dane$time),max(dane$time),by = 0.05)
+pred <- predict(reg1, newdata = data.frame(time = new_data), interval = "prediction", level = 0.95)
+matlines(new_data, pred[,2:3], col = "red", lty=2)
+```
+
+Czas jest dobrym predyktorem, ale to nie jest zależność liniowa. 
+
+## b)
+
+```{r,echo=FALSE}
+r_squared <- summary(reg1)$r.squared
+print(paste("Współczynnik determinacji: ", r_squared))
+```
+
+Rozważmy hipotezę: $H_{0}: \beta_{1}=0$ i $H_{1}: \beta_{1}\ne0$.
+
+```{r,echo=FALSE}
+f_statistic <- summary(reg1)$fstatistic[1]
+p_value <- pf(summary(reg1)$fstatistic[1], summary(reg1)$fstatistic[2], summary(reg1)$fstatistic[3], lower.tail = FALSE)
+
+cat(paste("Statystyka testowa ",f_statistic,"z 1 i 13 stopniami swobody."))
+cat(paste("p-value wynosi ",p_value))
+```
+
+Ustalając standardowy poziom istotności $\alpha=0.05$ mamy $p<\alpha$, odrzucamy hipotezę zerową. Stężenie i czas są ze sobą skorelowane.
+
+## c)
+
+```{r, echo=FALSE}
+correlation <- cor(dane$concentration, predict(reg1))
+print(paste("Współczynnik korelacji:", correlation))
+```
+
+# zadanie 6
+
+```{r, echo=TRUE}
+library(MASS)
+b = boxcox(reg1)
+lambda = b$x[which.max(b$y)]
+newconcentration = (dane$concentration^lambda - 1) / lambda
+plot(newconcentration~dane$time)
+```
+
+# zadanie 7
+
+## a)
+
+```{r,echo=FALSE}
+newconcentration = log(dane$concentration)
+dane2 <- data.frame(time = dane$time, newconcentration = newconcentration)
+newconcentration
+```
+
+## b)
+
+### a)
+
+```{r,echo=FALSE}
+reg1=lm(newconcentration~time, dane2)
+plot(newconcentration~time,dane2)
+intercept=reg1$coefficients[1]
+slope=reg1$coefficients[2]
+abline(intercept,slope,col='green')
+cat(paste0("Równanie regresji to Y = ",round(slope,4),"X + ",round(intercept,4)))
+
+new_data <- seq(min(dane2$time),max(dane2$time),by = 0.05)
+pred <- predict(reg1, newdata = data.frame(time = new_data), interval = "prediction", level = 0.95)
+matlines(new_data, pred[,2:3], col = "red", lty=2)
+```
+
+Czas jest dobrym predyktorem, występuje zależność liniowa.
+
+### b)
+
+```{r,echo=FALSE}
+r_squared <- summary(reg1)$r.squared
+print(paste("Współczynnik determinacji: ", r_squared))
+```
+
+Rozważmy hipotezę: $H_{0}: \beta_{1}=0$ i $H_{1}: \beta_{1}\ne0$.
+
+```{r,echo=FALSE}
+f_statistic <- summary(reg1)$fstatistic[1]
+p_value <- pf(summary(reg1)$fstatistic[1], summary(reg1)$fstatistic[2], summary(reg1)$fstatistic[3], lower.tail = FALSE)
+
+cat(paste("Statystyka testowa ",f_statistic,"z 1 i 13 stopniami swobody."))
+cat(paste("p-value wynosi ",p_value))
+```
+
+Ustalając standardowy poziom istotności $\alpha=0.05$ mamy $p<\alpha$, odrzucamy hipotezę zerową. Stężenie i czas są ze sobą skorelowane.
+
+### c)
+
+```{r, echo=FALSE}
+correlation <- cor(dane2$newconcentration, predict(reg1))
+print(paste("Współczynnik korelacji:", correlation))
+```
+
+Po transformacji zmiennej objaśnianej, zależność między zmienną objaśnianą a zmienną objaśniającą jest w większym stopniu liniowa. Współczynnik korelacji jest bliski 1 i znacząco większy od tego w zadaniu 5.
+
+## c) 
+
+```{r,echo=FALSE}
+pred <- predict(reg1, data.frame(time = dane$time), interval = "prediction", level = 0.95)
+
+plot(concentration~time,dane)
+lines(exp(pred[,2])~dane$time, col = "red", lty=2)
+lines(exp(pred[,3])~dane$time, col = "red", lty=2)
+lines(exp(pred[,1])~dane$time, col = "green", lty=2)
+```
+
+Powyższy wykres lepiej opisuje oryginalne dane niż wykres z zadania 5.
+
+## d)
+
+```{r, echo=FALSE}
+correlation <- cor(dane$concentration, exp(predict(reg1)))
+print(paste("Współczynnik korelacji:", correlation))
+```
+
+Współczynnik korelacji wyszedł zdecydowanie większy niż w zadaniu 5.
+
+# zadanie 8 
+
+## a)
+
+```{r,echo=FALSE}
+newtime = (dane$time)^(-1/2)
+dane3 <- data.frame(newtime = newtime, concentration = dane$concentration)
+newtime
+```
+
+## b)
+
+### a)
+
+```{r,echo=FALSE}
+reg1=lm(concentration~newtime, dane3)
+plot(concentration~newtime,dane3)
+intercept=reg1$coefficients[1]
+slope=reg1$coefficients[2]
+abline(intercept,slope,col='green')
+cat(paste0("Równanie regresji to Y = ",round(slope,4),"X + ",round(intercept,4)))
+
+new_data <- seq(min(dane3$newtime),max(dane3$newtime),by = 0.05)
+pred <- predict(reg1, newdata = data.frame(newtime = new_data), interval = "prediction", level = 0.95)
+matlines(new_data, pred[,2:3], col = "red", lty=2)
+```
+
+Czas jest dobrym predyktorem, występuje zależność liniowa.
+
+### b)
+
+```{r,echo=FALSE}
+r_squared <- summary(reg1)$r.squared
+print(paste("Współczynnik determinacji: ", r_squared))
+```
+
+Rozważmy hipotezę: $H_{0}: \beta_{1}=0$ i $H_{1}: \beta_{1}\ne0$.
+
+```{r,echo=FALSE}
+f_statistic <- summary(reg1)$fstatistic[1]
+p_value <- pf(summary(reg1)$fstatistic[1], summary(reg1)$fstatistic[2], summary(reg1)$fstatistic[3], lower.tail = FALSE)
+
+cat(paste("Statystyka testowa ",f_statistic,"z 1 i 13 stopniami swobody."))
+cat(paste("p-value wynosi ",p_value))
+```
+
+Ustalając standardowy poziom istotności $\alpha=0.05$ mamy $p<\alpha$, odrzucamy hipotezę zerową. Stężenie i czas są ze sobą skorelowane.
+
+### c)
+
+```{r, echo=FALSE}
+correlation <- cor(dane2$newconcentration, predict(reg1))
+print(paste("Współczynnik korelacji:", correlation))
+```
+
+Po transformacji zmiennej objaśniającej współczynnik korelacji zmniejszył się.
+
+## c) 
+
+```{r,echo=FALSE}
+pred <- predict(reg1, data.frame(newtime = dane3$newtime), interval = "prediction", level = 0.95)
+
+plot(concentration~time,dane)
+lines(pred[,2]~dane$time, col = "red", lty=2)
+lines(pred[,3]~dane$time, col = "red", lty=2)
+lines(pred[,1]~dane$time, col = "green", lty=2)
+```
+
+Powyższy wykres lepiej opisuje oryginalne dane niż wykres z zadania 5.
+
+## d)
+
+```{r, echo=FALSE}
+correlation <- cor(dane$concentration, predict(reg1))
+print(paste("Współczynnik korelacji:", correlation))
+```
+
+Współczynnik korelacji jest znacząco większy niż w zadaniu 5.
+
+Modele z zadania 7 i 8 są zdecydowanie lepsze niż ten z zadania 5. Lepiej opisują dane, bo zależność między oryginalnymi danymi nie jest liniowa. Model z zadania 7 przyda się gdy będziemy chcieli zbadać, co się dzieje w późniejszym czasie, a model z zadania 8 przyda się gdy będziemy chcieli zbadać, co się dzieje we wcześniejszym czasie (patrząc w którą stronę zwężają się przedziały predykcyjne).
+
+# Zadania teoretyczne
+
+## zadanie 1
+
+### a)
+
+```{r,echo=FALSE}
+criticT = c() 
+criticT = c(criticT, qt(0.975, 5))
+criticT = c(criticT, qt(0.975, 10))
+criticT = c(criticT, qt(0.975, 50))
+
+criticT
+```
+
+### b)
+
+```{r,echo=FALSE}
+criticF = c() 
+criticF = c(criticF, qf(0.95, 1, 5))
+criticF = c(criticF, qf(0.95, 1, 10))
+criticF = c(criticF, qf(0.95, 1, 50))
+
+criticF
+```
+
+### c)
+
+```{r,echo=TRUE}
+criticT^2
+```
+
+Możemy zauważyć, że kwadrat wartości $t_{c}$ wynosi $F_{c}$. Wynika to z rozkładów z jakich pochodzą te wartości krytyczne.
+
+## Zadanie 2
+
+### a)
+
+$n-2=20$ zatem w pliku znajdują się 22 obserwacje.
+
+### b)
+
+$\sigma^{2}=SSE/dfE=400/20=20$ zatem $\sigma=2\sqrt{5}$.
+
+### c)
+
+
+$F=MSM/MSE=(SSM/dfM)/\sigma^{2}=100/20=5$ ponadto $F_{c}=F^{*}(1-\alpha,1,n-2)=4.351244$. Widzimy, że $F>F_{c}$, zatem odrzucamy hipotezę zerową, slope nie jest równy zero.
+
+### d)
+
+$R^{2}=SSM/SST=SSM/(SSM+SSE)=100/500=0.20$ zatem model wyjaśnia 20% zmienności zmiennej odpowiedzi.
+
+### e)
+
+Próbkowy współczynnik korelacji między zmienną odpowiedzi a zmienną objaśniającą wynosi $\pm \sqrt{R^{2}}=\pm0.4472136$, gdzie znak zależy od nachylenia prostej regresji (to znak współczynnika nachylenia).
+

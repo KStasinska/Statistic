@@ -136,7 +136,7 @@ Niech $E(Y_{h})=\mu_{h}$, zatem estymator wartości oczekiwanej wyraża się wzo
 Wyniki eksperymentu przeprowadzonego przy pomocy funkcji wbudowanych.
 
 ```{r,echo=FALSE}
-k_values <- c(1, 2, 4, 5, 6, 7, 8, 11, 25, 100)
+k_values <- c(1, 5, 8, 11, 25, 60, 76, 77, 80, 100)
 
 for (k in k_values) {
   new_data <- data.frame(size = k)
@@ -151,7 +151,7 @@ for (k in k_values) {
 Wyniki eksperymentu przy użyciu zaimplementowanych wzorów z wykładu.
 
 ```{r,echo=TRUE}
-for (k in c(1, 2, 4, 5, 6, 7, 8, 11, 25, 100)){
+for (k in c(1, 5, 8, 11, 25, 60, 76, 77, 80, 100)){
   mu=intercept+slope*k
   smu2=s2*(1/length(dane$size)+(k-mean(dane$size))^2/(sum((dane$size-mean(dane$size))^2)))
   left=mu-kwantyl*smu2^(1/2)
@@ -161,7 +161,7 @@ for (k in c(1, 2, 4, 5, 6, 7, 8, 11, 25, 100)){
   cat(paste("Długość przedziału=",right-left,"\n\n"))
 }
 ```
-Im współrzędna x-owa punktu bliższa średniej wartości współrzędnej x-owej po wszystkich punktach, tym krótszy przedział ufności. Co zgadza się z teorią z wykładu, wpływ na długość przedziału ma $s(\hat\mu_{h})$, które z kolei zależy od $(X_{h}-\bar{X})^{2}$. Średnia wartość współrzędnej x-owej po wszystkich punktach $=5.111111$, stąd dla $k=5$ możemy zaobserwować najkrótszy przedział ufności.
+Im współrzędna x-owa punktu bliższa średniej wartości współrzędnej x-owej po wszystkich punktach, tym krótszy przedział ufności. Co zgadza się z teorią z wykładu, wpływ na długość przedziału ma $s(\hat\mu_{h})$, które z kolei zależy od $(X_{h}-\bar{X})^{2}$. Średnia wartość współrzędnej x-owej po wszystkich punktach $=76.26667$, stąd dla $k=76$ możemy zaobserwować najkrótszy przedział ufności.
 
 # zadanie 6
 
@@ -170,7 +170,7 @@ Wartości przewidywanego czasu obsługi również wyrażają się wzorem $\hat Y
 Wyniki eksperymentu przeprowadzonego przy pomocy funkcji wbudowanych.
 
 ```{r,echo=FALSE}
-k_values <- c(1, 2, 4, 5, 6, 7, 8, 11, 25, 100)
+k_values <- c(1, 5, 8, 11, 25, 60, 76, 77, 80, 100)
 
 for (k in k_values) {
   new_data <- data.frame(size = k)
@@ -185,7 +185,7 @@ for (k in k_values) {
 Wyniki eksperymentu przy użyciu zaimplementowanych wzorów z wykładu.
 
 ```{r,echo=TRUE}
-for (k in c(1, 2, 4, 5, 6, 7, 8, 11, 25, 100)){
+for (k in c(1, 5, 8, 11, 25, 60, 76, 77, 80, 100)){
   mu=intercept+slope*k
   spred2=s2*(1+1/length(dane$size)+(k-mean(dane$size))^2/(sum((dane$size-mean(dane$size))^2)))
   left=mu-kwantyl*spred2^(1/2)
@@ -196,7 +196,7 @@ for (k in c(1, 2, 4, 5, 6, 7, 8, 11, 25, 100)){
 }
 ```
 
-Przedziały predykcyjne są znacząco dłuższe od przedziałów ufności. Zależność między długością przedziałów predykcyjnych jest taka sama, jak zależność między długością przedziałów ufności. Im współrzędna x-owa punktu bliższa średniej wartości współrzędnej x-owej po wszystkich punktach, tym krótszy przedział predykcyjny. Wynika to z tego samego argumentu co w zadaniu 5.
+Przedziały predykcyjne są znacząco dłuższe od przedziałów ufności. Zależność między długością przedziałów predykcyjnych jest taka sama, jak zależność między długością przedziałów ufności. Im współrzędna x-owa punktu bliższa średniej wartości współrzędnej x-owej po wszystkich punktach, tym krótszy przedział ufności. Wynika to z tego samego argumentu co w zadaniu 5.
 
 # zadanie 7
 

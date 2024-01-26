@@ -1,0 +1,458 @@
+---
+title: "Modele 5"
+author: "Katarzyna Stasińska"
+date: "2024-01"
+output: pdf_document
+---
+
+```{r, echo=FALSE}
+path='/home/kasia/Desktop/Modele/CH06PR15.txt'
+dane=read.table(path,col.names=c("wiek","ciężkość","niepokój","satysfakcja"))
+```
+
+# Zadanie 1
+
+## a)
+
+```{r,echo=FALSE}
+model = lm(dane[,4] ~., dane[,1:3])
+```
+
+Polecenia wbudowane:
+
+```{r,echo=FALSE}
+cat("Y=", summary(model)$coefficients[1], "+", summary(model)$coefficients[2], "X1 +", summary(model)$coefficients[3],"X2 +", summary(model)$coefficients[4],"X3")
+cat("Współczynnik R^2", summary(model)$r.squared)
+```
+
+Wzory teoretyczne:
+
+```{r,echo=TRUE}
+X = as.matrix(dane[,1:3])
+nowa_kolumna = rep(1, nrow(X))
+X = cbind(nowa_kolumna, X)
+Y = as.matrix(dane[,4])
+Bety = solve(t(X) %*% X) %*% (t(X)) %*% Y
+cat("Y=", Bety[1],"+",Bety[2], "X1 +", Bety[3],"X2 +", Bety[4],"X3")
+SSM = sum((predict(model) - mean(Y))^2)
+SST = sum((Y - mean(Y))^2)
+R2 = SSM/SST
+cat("Współczynnik R^2", R2)
+```
+
+## b) 
+
+Rozważmy hipotezę $H_{0} : \beta_{1} = \beta_{2} = \beta_{3} = 0$ przeciwko $H_{1} : \beta_{1} \neq 0 \, \vee \, \beta_{2} \neq 0 \, \vee \, \beta_{3} \neq 0$.
+
+F - Statystyka testowa z rozkładu Fishera-Snedecora z 3 i 46 - 4 = 42 stopniami swobody.
+
+Przyjmijmy, że $\alpha = 0.05$.
+
+Wzory teoretyczne:
+
+```{r, echo=TRUE}
+dfM = 3
+dfE = 42
+SSE = SST - SSM
+MSE = SSE/dfE
+MSM = SSM/dfM
+F = MSM/MSE
+pval = 1 - pf(F,3,42)
+cat("statystyka testowa:", F, "pvalue:",pval)
+```
+
+Polecenia wbudowane
+
+```{r,echo = FALSE}
+summary(model)
+```
+
+P-wartość jest mniejsza od poziomu istotności, zatem możemy odrzucić hipotezę zerową.
+
+## c) Wiek
+
+Rozważmy hipotezę $H_{0} : \beta_{1} = 0$ przeciwko $H_{1} : \beta_{1} \neq 0$.
+
+F - Statystyka testowa z rozkładu Fishera-Snedecora z 1 i 42 stopniami swobody.
+
+Przyjmijmy, że $\alpha = 0.05$.
+
+Wzory teoretyczne:
+
+```{r, echo=TRUE}
+modelR = lm(dane[,4] ~., dane[,2:3])
+
+SSM_R = sum((predict(modelR) - mean(Y))^2)
+SSE_R = SST - SSM_R
+
+F = (SSE_R - SSE)/MSE
+pval = 1 - pf(F,1,42)
+cat("statystyka testowa:", F, "pvalue:",pval)
+```
+
+Polecenia wbudowane
+
+```{r,echo = FALSE}
+anova(modelR,model) 
+```
+
+P-wartość jest większa od poziomu istotności, zatem nie możemy odrzucić hipotezy zerowej.
+
+## c) ciężkość
+
+Rozważmy hipotezę $H_{0} : \beta_{2} = 0$ przeciwko $H_{1} : \beta_{2} \neq 0$.
+
+F - Statystyka testowa z rozkładu Fishera-Snedecora z 1 i 42 stopniami swobody.
+
+Przyjmijmy, że $\alpha = 0.05$.
+
+Wzory teoretyczne:
+
+```{r, echo=TRUE}
+modelR = lm(dane[,4] ~ dane[,1] + dane[,3])
+
+SSM_R = sum((predict(modelR) - mean(Y))^2)
+SSE_R = SST - SSM_R
+
+F = (SSE_R - SSE)/MSE
+pval = 1 - pf(F,1,42)
+cat("statystyka testowa:", F, "pvalue:",pval)
+```
+
+Polecenia wbudowane
+
+```{r,echo = FALSE}
+anova(modelR,model) 
+```
+
+P-wartość jest większa od poziomu istotności, zatem nie możemy odrzucić hipotezy zerowej. 
+
+## c) Niepokój
+
+Rozważmy hipotezę $H_{0} : \beta_{3} = 0$ przeciwko $H_{1} : \beta_{3} \neq 0$.
+
+F - Statystyka testowa z rozkładu Fishera-Snedecora z 1 i 42 stopniami swobody.
+
+Przyjmijmy, że $\alpha = 0.05$.
+
+Wzory teoretyczne:
+
+```{r, echo=TRUE}
+modelR = lm(dane[,4] ~., dane[,1:2])
+
+SSM_R = sum((predict(modelR) - mean(Y))^2)
+SSE_R = SST - SSM_R
+
+F = (SSE_R - SSE)/MSE
+pval = 1 - pf(F,1,42)
+cat("statystyka testowa:", F, "pvalue:",pval)
+```
+
+Polecenia wbudowane
+
+```{r,echo = FALSE}
+anova(modelR,model) 
+```
+
+P-wartość jest mniejsza od poziomu istotności, zatem możemy odrzucić hipotezę zerową.
+
+## d)
+
+```{r,echo=FALSE}
+kwantyl = qt(0.975,42)
+param = c("wieku", "ciężkości", "niepokoju")
+
+for(i in 2:4){
+ b = Bety[i]
+ sb = sqrt(MSE*solve(t(X) %*% X)[i,i])
+ cat("Przedział ufności dla [",b-sb*kwantyl,",",b+sb*kwantyl,"]\n")
+}
+```
+
+Możemy zwrócić uwagę, że jedynie trzeci przedział ufności nie zawiera 0. I jedynie w przypadku trzecim odrzuciliśmy hipotezę zerową.
+
+# Zadanie 2
+
+```{r, echo=FALSE}
+residua = predict(model) - Y
+plot(residua ~ predict(model), xlab="przewidywana satysfakcja",ylab="residua")
+plot(residua ~ dane[,2], xlab="wiek",ylab="residua")
+plot(residua ~ dane[,3], xlab="ciężkość",ylab="residua")
+plot(residua ~ dane[,4], xlab="niepokój",ylab="residua")
+```
+
+Wraz ze wzrostem niepokoju, wartości residuów maleją. 
+
+# Zadanie 3
+
+```{r, echo=FALSE}
+shapiro_test_result <- shapiro.test(residua)
+print(shapiro_test_result)
+qqnorm(residua)
+qqline(residua, col = 2)
+```
+
+Rozkład residuów może być w przybliżeniu normalny, test Shapiro-Wilka nie pozwala nam odrzucić hipotezy zerowej mówiącej o normalności tego rozkładu. Patrząc na wykres qqnorm możemy zauważyć, że ogony z obu stron odstają.
+
+# Zadanie 4
+
+```{r,echo=FALSE}
+path='/home/kasia/Desktop/Modele/csdata.txt'
+dane=read.table(path,col.names=c("id","GPA","HSM","HSS","HSE","SATM","SATV","SEX"))
+```
+
+## a)
+
+```{r,echo=FALSE}
+model1 = lm(dane[,2] ~., dane[,3:5])
+model2 = lm(dane[,2] ~., dane[,3:7])
+
+Y = dane[,2] 
+SST = sum((Y - mean(Y))^2)
+
+SSM1 = sum((predict(model1) - mean(Y))^2)
+SSM2 = sum((predict(model2) - mean(Y))^2)
+
+SSE1 = SST - SSM1
+SSE2 = SST - SSM2
+
+MSE = SSE2/218
+
+cat("Różnica w SSE =",SSE1-SSE2)
+```
+
+Rozważmy hipotezę $H_{0} : \beta_{4} = \beta_{5} = 0$ przeciwko $H_{1} : \beta_{4} \neq 0 \vee \beta_{5} \neq 0$.
+
+F - Statystyka testowa z rozkładu Fishera-Snedecora z 2 i 224-6 = 218 stopniami swobody.
+
+Przyjmijmy, że $\alpha = 0.05$.
+
+```{r,echo=FALSE}
+F = (SSE1-SSE2)/2/MSE
+cat("Statystyka testowa F wynosi = ",F)
+```
+
+## b)
+
+```{r,echo=FALSE}
+anova(model1,model2)
+```
+
+Korzystając z funkcji anova mamy $F=0,9503$ z 2 i 218 stopniami swobody, $p_{wartość}=0.3882$.
+$p_{wartość} > \alpha$ zatem nie możemy odrzucić hipotezy zerowej.
+
+# Zadanie 5
+
+## a)
+
+```{r,echo=FALSE}
+model = lm(dane[,2] ~ dane[,6] + dane[,7] + dane[,3] + dane[,5] + dane[,4])
+
+library('car')
+
+I = anova(model)
+II = Anova(model, type = 2)
+
+cat("Sumy kwadratów typu I")
+cat(t(I[,2])[1:5])
+
+cat("Sumy kwadratów typu II")
+cat(t(II[,1])[1:5])
+```
+
+Jeśli znamy wartości sum typu I, to znamy też sumę kwaratów pełnego modelu, jest to ich suma. Sumy kwadratów typu II są używane do testowania hipotez, które badają istotność parametru $\beta$.
+
+## b)
+
+```{r,echo=FALSE}
+cat("Suma kwaratów typu I dla HSM = ", t(I[,2])[3])
+
+model1 = lm(dane[,2] ~ dane[,6] + dane[,7] + dane[,3])
+model2 = lm(dane[,2] ~ dane[,6] + dane[,7])
+
+cat("SSM modelu1 - SSM modelu2 =",sum(anova(model1)[1:3,2]) - sum(anova(model2)[1:2,2])) 
+```
+
+## c)
+
+Tak, sumy kwadratów typu I i II są takie same dla ostatniego predykatora. Sumy kwadratów typu I definiujemy jako wpływ i-tej zmiennej po uwzględnieniu i-1 poprzednich zmiennych. Zatem dla ostatniego predykatora suma kwadratów typu I opisuje wpływ ostatniego predykatora po uwzględnieniu wszystkich poprzednich. Z kolei sumy kwadratów typu II zefiniowane są jako wpływ i-tej zmiennej po uwzględniniu wszystkich pozostałych w tym modelu.
+
+# Zadanie 6
+
+```{r,echo=FALSE}
+dane2 = cbind(dane, SAT = dane[,6] + dane[,7])
+modelz6 = lm(dane2[,2] ~ dane2[,6] + dane2[,7] + dane2[,9])
+summary(modelz6)
+```
+
+Zauważmy, że tak skonstruowany model nie definiuje nam współczynnika przy zmiennej SAT, bo jest ona kombinacją liniową pozostałych zmiennych. 
+
+# Zadanie 7
+
+```{r, echo=FALSE}
+model = lm(dane[,2] ~.,dane[3:8])
+avPlots(model)
+```
+Partial regression plot przedstawia efekt dodania kolejnej zmiennej do modelu, który zawiera już jedną lub więcej zmiennych niezależnych. Nachylenie niebieskiej linii jest równe wartości estymatora danej zmiennej objaśniającej w modelu regresji wielorakiej. Im mniejsza wartość bezwzgledna nachylenia niebieskiej prostej, tym mniejsza informacja wniesiona do modelu przez daną zmienną. Wszystkie niebieskie wykresy są liniowe, więc nie jest wymagana transformacja danych.
+
+## b)
+
+```{r, echo=FALSE}
+x = rstandard(model)
+y = rstudent(model)
+
+plot(x, ylab='wewnętrznie')
+plot(y, ylab='zewnętrznie')
+```
+
+W residuach studentyzowanych wewnętrznie korzystamy z klasycznego modelu (wykorzystującego wszystkie obserwacje). O zewnętrznej studentyzacji residuów mówimy, kiedy korzystamy z takiego samego modelu, ale z pominięciem i-tej obserwacji, do wyznaczenia wartości i-tego residuum. Zaletą wewnętrznie studentyzowanych residuów jest to, że określają one, jak duże są reszty w jednostkach odchylenia standardowego, a zatem można je łatwo wykorzystać do identyfikacji wartości odstających. Dlatego powinniśmy lepiej się przyjrzeć tym residuuom, których bezwględne wartości są najwyższe.
+
+## c)
+
+```{r, echo=FALSE}
+dffits = as.data.frame(dffits(model))
+plot(dffits)
+```
+
+DFFITS dla i–tej obserwacji jest standaryzowaną różnicą pomiędzy predykcjami wartości $Y_{i}$ uzyskanymi na
+podstawie dwóch modeli skonstruowanych na danych, pełnych i bez obserwacji $Y_{i}$. Spodziewamy się, że obie predykcje będą przyjmowały podobne wartości, wtedy DFFITS przyjmuje małe wartości. Powinniśmy się lepiej przyjrzeć tym obserwacjom, dla których $|DFFITS_{i}| > 2\sqrt{p/n} = 2 * \sqrt{5/224} = 0.2988072$
+
+## d)
+
+```{r, echo=FALSE}
+cooks_dist = cooks.distance(model)
+plot(cooks_dist)
+```
+
+Odległość Cook'a ($D_{i}$) dla i–tej obserwacji również jest standaryzowaną różnicą pomiędzy predykcjami wektora Y uzyskanymi na podstawie dwóch modeli skonstruowanych na danych, pełnych i bez obserwacji $Y_{i}$. Analogicznie jak w przypadku wyżej, im mniejsza odległość cook'a tym lepiej. Powinniśmy lepiej przyjrzeć się obserwacjom, dla których $|D_{i}| > 1$.
+
+## e)
+
+```{r,echo=FALSE}
+library(ggplot2)
+library(caret)
+
+dfbetas = as.data.frame(dfbetas(model))
+
+ggplot() +
+  geom_point(data = dfbetas, aes(x = seq_along(dfbetas[,1]), y = dfbetas[,1], color = "b0"), alpha = 0.7, position = position_jitter(width = 0.1)) +
+  geom_point(data = dfbetas, aes(x = seq_along(dfbetas[,1]), y = dfbetas[,2], color = "b1"), alpha = 0.7, position = position_jitter(width = 0.1)) +
+  geom_point(data = dfbetas, aes(x = seq_along(dfbetas[,1]), y = dfbetas[,3], color = "b2"), alpha = 0.7, position = position_jitter(width = 0.1)) +
+  geom_point(data = dfbetas, aes(x = seq_along(dfbetas[,1]), y = dfbetas[,4], color = "b3"), alpha = 0.7, position = position_jitter(width = 0.1)) +
+  geom_point(data = dfbetas, aes(x = seq_along(dfbetas[,1]), y = dfbetas[,5], color = "b4"), alpha = 0.7, position = position_jitter(width = 0.1)) +
+  geom_point(data = dfbetas, aes(x = seq_along(dfbetas[,1]), y = dfbetas[,6], color = "b5"), alpha = 0.7, position = position_jitter(width = 0.1)) +
+  scale_color_manual(values = c("b0" = "red", "b1" = "blue", "b2" = "green", "b3" = "purple", "b4" = "orange", "b5" = "pink")) +
+  labs(color = 'k', x = 'Indeks obserwacji')
+```
+
+Miara DFBETAS służy do badania wpływu $Y_{i}$ na estymację parametru $\beta_{k}$. Dla k–tego parametru jest różnicą pomiędzy dwoma estymatorami parametru $\beta_{k}$ uzyskanymi na podstawie dwóch modeli skonstruowanych na danych, pełnych i bez obserwacji $Y_{i}$ podzielonymi przez estymator odchylenia standardowego estymatora uzyskanego na podstawie niepełnego modelu. Analogicznie jak wyżej, im mniejsza miara $|DFBETA_{k}|$ tym lepiej. Powinniśmy lepiej przyjrzeć się obserwacjom, dla których $|DFBETA_{k}| > 2/\sqrt{n} = 0.1336306$.
+
+## f)
+
+Tolerance jest odwrotnością Variance Inflation Factor (VIF). VIF bada, dla k-tej zmiennej, w jakim stopniu zmienna $X_{k}$ jest objaśniana przez wszystkie pozostałe zmienne objaśniające. Gdy Tolarance < 0.1 to ma miejsce problem z multikolinearnością.
+
+Możemy zauważyć, że w modelu z zadania 7 nie występuje problem z multikolinearnością.
+
+```{r, echo = FALSE}
+tolerance = 1/vif(model)
+cat("Tolerance",tolerance)
+```
+
+Natomiast w modelu z zadania 6 występuje ten problem, dlatego spodziewam się tolerancji < 0.1. Wbudowane funkcje zwracają błąd przy próbie liczenia dokładnej wartości tolerancji, bo model składa sie z liniowozależnych zmiennych.
+
+## g)
+
+Kryteria AIC oraz BIC są modyfikacjami metody największej wiarogodności i są skonstruowane w taki sposób, by znaleźć balans pomiędzy dopasowaniem modelu do danych i nadmierną złożonością modelu. Statystyka Cp Mallowsa opisuje łączne zachowanie obciążeń.
+
+```{r,echo = FALSE}
+library(leaps)
+bestSubsets <- regsubsets(dane[,2] ~., dane[,3:8])
+best_submodel <- which.min(summary(bestSubsets)$bic)
+summary(bestSubsets)$which[best_submodel, ]
+```
+
+Najlepszy model według Cp:
+
+```{r,echo = FALSE}
+bestSubsets <- regsubsets(dane[,2] ~., dane[,3:8])
+best_submodel <- which.min(summary(bestSubsets)$cp)
+summary(bestSubsets)$which[best_submodel, ]
+```
+
+Najlepszy model według adj R squared:
+
+```{r,echo = FALSE}
+bestSubsets <- regsubsets(dane[,2] ~., dane[,3:8])
+best_submodel <- which.min(summary(bestSubsets)$adjr2)
+summary(bestSubsets)$which[best_submodel, ]
+```
+
+
+
+# Zadania teoretyczne
+
+# Zadanie 1
+
+## a)
+
+$Y = 1 + 4 * 2 + 3 * 6 = 27$
+
+## b)
+
+$s^{2}(pred) = s^2(\hat\mu_{h}) + s^{2} = 4 + 9 = 13$
+
+## c)
+
+Przedział ufności wyznacza $b_{1} \pm t_{c} s(b_{1})$, gdzie $t_{c}$ to kwantyl rzędu $1 - \alpha/2 = 0.975$ z $n-2 = 18$ stopniami swobody z rozkładu studenta. $t_{c} = 2.100922$. Zatem przedział ufności to $[1.899078,6.100922]$
+
+# Zadanie 2
+
+Niech $\alpha = 0.05$
+
+## a)
+
+Suma kwadratów typu I dla $X_{3}$ ma postać $SSM(X_{3}|X_{1},X_{2})$, dokładnie taką samą jak suma kwadratów typu II. Zatem suma kwadratów typu II dla $X_{3}=20$.
+
+## b)
+
+Rozważmy hipotezę $H_{0} : \beta_{1} = 0$ przeciwko $H_{1} : \beta_{1} \neq 0$
+
+Wiemy, że $SSM = 360$, $SST = 760$ i $SSE = 400$ stąd $MSE = SSE/dfE = 400/20 = 20$.
+
+$F=\frac{SSM(X_{1}|X_{2},X_{3})}{MSE(F)}=\frac{30}{20}=1.5$
+
+$F^{*}(1-\alpha = 0.95,1,20) = 4.351244$. Zatem nie możemy odrzucić hipotezy zerowej, bo $F < 4.351244$.
+
+## c)
+
+Rozważmy hipotezę $H_{0} : \beta_{2} = \beta_{3} = 0$ przeciwko $H_{1} : \beta_{2} \neq 0 \, \vee \, \beta_{3} \neq 0$.
+
+Wiemy, że $SSM = SSM(X_{2},X_{3}|X_{1}) + SSM(X_{1})$. Zatem $SSM(X_{2},X_{3}|X_{1}) = 360 - 300 = 60$. Wiemy też, że $SSM(X_{2},X_{3}|X_{1}) = SSE(X_{2},X_{3}|X_{1})$. Zatem
+
+$F = \frac{SSE(X_{2},X_{3}|X_{1})/2}{20} = 1.5$
+
+$F^{*}(1-\alpha = 0.95,2,20) = 3.492828$. Zatem nie możemy odrzucić hipotezy zerowej, bo $F < 3.492828$.
+
+## d)
+
+Rozważmy hipotezę $H_{0} : \beta_{1} = \beta_{2} = \beta_{3} = 0$ przeciwko $H_{1} : \beta_{1} \neq \, \vee \, \beta_{2} \neq 0 \, \vee \, \beta_{3} \neq 0$.
+
+$MSM = SSM / dfM = 360 / 3 = 120$
+
+$F = \frac{MSM}{MSE} = \frac{120}{20} = 6$
+
+$F^{*}(1-\alpha = 0.95,3,20) = 3.098391$. Zatem odrzucamy hipotezę zerową, bo $F > 3.098391$.
+
+## e)
+
+Rozważmy hipotezę $H_{0} : \beta_{1} = 0$ przeciwko $H_{1} : \beta_{1} \neq 0$. W nowym modelu $SST = 760$, $SSM = 300$, $SSE = 760 - 300 = 460$, $MSE = 460/22$, $MSM = 300/1$.
+
+$F = \frac{MSM}{MSE} = \frac{300}{460/22} = 30 * 22 / 46 = 14.34783$
+
+$F^{*}(1-\alpha = 0.95,1,22) = 4.30095$. Zatem odrzucamy hipotezę zerową, bo $F > 4.30095$.
+
+## f)
+
+Próbkowy współczynnik korelacji między Y a $X_{1} = \sqrt{R^2} = \sqrt{\frac{SSM}{SST}} = \sqrt{\frac{300}{760}} =  0.6282809$
+
+
