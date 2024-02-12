@@ -1,4 +1,4 @@
-# Statystyka i Modele liniowe
+# Statystyka/Modele liniowe/Machine Learning
 Uwr semestr zimowy 2023/2024
 
 # Statystyka 
@@ -6,3 +6,6 @@ Uwr semestr zimowy 2023/2024
 
 # Modele
 wszystkie raporty + teoria + dane
+
+# Machine Learning (ML)
+final project
