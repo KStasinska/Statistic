@@ -8,4 +8,4 @@ Uwr semestr zimowy 2023/2024
 wszystkie raporty + teoria + dane
 
 # Machine Learning (ML)
-final project
+assignments + final project
