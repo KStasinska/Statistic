@@ -1,11 +1,16 @@
-# Statystyka/Modele liniowe/Machine Learning
-Uwr semestr zimowy 2023/2024
+Uwr ISIM/Analiza danych materiały 
 
-# Statystyka 
-???
+# Analiza numeryczna
+projekt
+
+# Machine Learning (ML)
+assignments + final project
 
 # Modele
 wszystkie raporty + teoria + dane
 
-# Machine Learning (ML)
-assignments + final project
+# Statystyka 
+???
+
+
+
