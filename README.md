@@ -1,6 +1,6 @@
-Uwr ISIM/Analiza danych materiały 
+# Uwr ISIM/Analiza danych materiały 
 
-# Analiza numeryczna
+# Analiza numeryczna (AN)
 projekt
 
 # Machine Learning (ML)
